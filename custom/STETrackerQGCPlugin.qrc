@@ -9,6 +9,6 @@
         <file alias="PaintedDogsLogo.png">resources/PaintedDogsLogo.png</file>
 	</qresource>
     <qresource prefix="/json">
-        <file alias="VHFTracker.SettingsGroup.json">src/VHFTracker.SettingsGroup.json</file>
+        <file alias="STETracker.SettingsGroup.json">src/STETracker.SettingsGroup.json</file>
     </qresource>
 </RCC>

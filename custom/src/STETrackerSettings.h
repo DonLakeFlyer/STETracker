@@ -11,12 +11,12 @@
 
 #include "SettingsGroup.h"
 
-class VHFTrackerSettings : public SettingsGroup
+class STETrackerSettings : public SettingsGroup
 {
     Q_OBJECT
     
 public:
-    VHFTrackerSettings(QObject* parent = nullptr);
+    STETrackerSettings(QObject* parent = nullptr);
 
     Q_PROPERTY(Fact* altitude   READ altitude   CONSTANT)
     Q_PROPERTY(Fact* divisions  READ divisions  CONSTANT)

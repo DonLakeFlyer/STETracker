@@ -7,7 +7,7 @@
  *
  ****************************************************************************/
 
-#include "VHFTrackerSettings.h"
+#include "STETrackerSettings.h"
 #include "QGCPalette.h"
 #include "QGCApplication.h"
 
@@ -15,14 +15,14 @@
 #include <QtQml>
 #include <QStandardPaths>
 
-const char* VHFTrackerSettings::_settingsGroup =        "VHFTracker";
-const char* VHFTrackerSettings::_altitudeFactName =     "Altitude";
-const char* VHFTrackerSettings::_divisionsFactName =    "Divisions";
-const char* VHFTrackerSettings::_frequencyFactName =    "Frequency";
-const char* VHFTrackerSettings::_maxPulseFactName =     "MaxPulse";
-const char* VHFTrackerSettings::_gainFactName =         "gain";
+const char* STETrackerSettings::_settingsGroup =        "STETracker";
+const char* STETrackerSettings::_altitudeFactName =     "Altitude";
+const char* STETrackerSettings::_divisionsFactName =    "Divisions";
+const char* STETrackerSettings::_frequencyFactName =    "Frequency";
+const char* STETrackerSettings::_maxPulseFactName =     "MaxPulse";
+const char* STETrackerSettings::_gainFactName =         "gain";
 
-VHFTrackerSettings::VHFTrackerSettings(QObject* parent)
+STETrackerSettings::STETrackerSettings(QObject* parent)
     : SettingsGroup     (_settingsGroup, _settingsGroup, parent)
     , _altitudeFact     (nullptr)
     , _divisionsFact    (nullptr)
@@ -31,10 +31,10 @@ VHFTrackerSettings::VHFTrackerSettings(QObject* parent)
     , _gainFact         (nullptr)
 {
     QQmlEngine::setObjectOwnership(this, QQmlEngine::CppOwnership);
-    qmlRegisterUncreatableType<VHFTrackerSettings>("QGroundControl.SettingsManager", 1, 0, "VHFTrackerSettings", "Reference only");
+    qmlRegisterUncreatableType<STETrackerSettings>("QGroundControl.SettingsManager", 1, 0, "STETrackerSettings", "Reference only");
 }
 
-Fact* VHFTrackerSettings::altitude(void)
+Fact* STETrackerSettings::altitude(void)
 {
     if (!_altitudeFact) {
         _altitudeFact = _createSettingsFact(_altitudeFactName);
@@ -43,7 +43,7 @@ Fact* VHFTrackerSettings::altitude(void)
     return _altitudeFact;
 }
 
-Fact* VHFTrackerSettings::divisions(void)
+Fact* STETrackerSettings::divisions(void)
 {
     if (!_divisionsFact) {
         _divisionsFact = _createSettingsFact(_divisionsFactName);
@@ -52,7 +52,7 @@ Fact* VHFTrackerSettings::divisions(void)
     return _divisionsFact;
 }
 
-Fact* VHFTrackerSettings::frequency(void)
+Fact* STETrackerSettings::frequency(void)
 {
     if (!_frequencyFact) {
         _frequencyFact = _createSettingsFact(_frequencyFactName);
@@ -61,7 +61,7 @@ Fact* VHFTrackerSettings::frequency(void)
     return _frequencyFact;
 }
 
-Fact* VHFTrackerSettings::maxPulse(void)
+Fact* STETrackerSettings::maxPulse(void)
 {
     if (!_maxPulseFact) {
         _maxPulseFact = _createSettingsFact(_maxPulseFactName);
@@ -70,7 +70,7 @@ Fact* VHFTrackerSettings::maxPulse(void)
     return _maxPulseFact;
 }
 
-Fact* VHFTrackerSettings::gain(void)
+Fact* STETrackerSettings::gain(void)
 {
     if (!_gainFact) {
         _gainFact = _createSettingsFact(_gainFactName);

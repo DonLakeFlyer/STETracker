@@ -3,26 +3,26 @@
 #include "QGCCorePlugin.h"
 #include "QmlObjectListModel.h"
 #include "SettingsFact.h"
-#include "VHFTrackerQGCOptions.h"
+#include "STETrackerQGCOptions.h"
 #include "QGCLoggingCategory.h"
 
 #include <QElapsedTimer>
 #include <QGeoCoordinate>
 #include <QTimer>
 
-class VHFTrackerSettings;
+class STETrackerSettings;
 
-Q_DECLARE_LOGGING_CATEGORY(VHFTrackerQGCPluginLog)
+Q_DECLARE_LOGGING_CATEGORY(STETrackerQGCPluginLog)
 
-class VHFTrackerQGCPlugin : public QGCCorePlugin
+class STETrackerQGCPlugin : public QGCCorePlugin
 {
     Q_OBJECT
 
 public:
-    VHFTrackerQGCPlugin(QGCApplication* app, QGCToolbox* toolbox);
-    ~VHFTrackerQGCPlugin();
+    STETrackerQGCPlugin(QGCApplication* app, QGCToolbox* toolbox);
+    ~STETrackerQGCPlugin();
 
-    Q_PROPERTY(VHFTrackerSettings*  vhfSettings         MEMBER _vhfSettings             CONSTANT)
+    Q_PROPERTY(STETrackerSettings*  vhfSettings         MEMBER _vhfSettings             CONSTANT)
     Q_PROPERTY(qreal                beepStrength        MEMBER _beepStrength            NOTIFY beepStrengthChanged)
     Q_PROPERTY(qreal                temp                MEMBER _temp                    NOTIFY tempChanged)
     Q_PROPERTY(int                  bpm                 MEMBER _bpm                     NOTIFY bpmChanged)
@@ -117,7 +117,7 @@ private:
     QTimer                  _delayTimer;
     QTimer                  _targetValueTimer;
     QTimer                  _simPulseTimer;
-    VHFTrackerQGCOptions*   _vhfQGCOptions;
-    VHFTrackerSettings*     _vhfSettings;    
+    STETrackerQGCOptions*   _vhfQGCOptions;
+    STETrackerSettings*     _vhfSettings;    
     int                     _vehicleFrequency;
 };

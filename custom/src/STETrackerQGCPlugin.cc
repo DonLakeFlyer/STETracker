@@ -1,8 +1,8 @@
-#include "VHFTrackerQGCPlugin.h"
+#include "STETrackerQGCPlugin.h"
 #include "DirectionMapItem.h"
 #include "LineMapItem.h"
 #include "Vehicle.h"
-#include "VHFTrackerSettings.h"
+#include "STETrackerSettings.h"
 #include "QGCGeo.h"
 #include "QGCApplication.h"
 #include "AppSettings.h"
@@ -40,9 +40,9 @@
 static const int DEBUG_COMMAND_ACK_SET_GAIN =	0;
 static const int DEBUG_COMMAND_ACK_SET_FREQ =	1;
 
-QGC_LOGGING_CATEGORY(VHFTrackerQGCPluginLog, "VHFTrackerQGCPluginLog")
+QGC_LOGGING_CATEGORY(STETrackerQGCPluginLog, "STETrackerQGCPluginLog")
 
-VHFTrackerQGCPlugin::VHFTrackerQGCPlugin(QGCApplication *app, QGCToolbox* toolbox)
+STETrackerQGCPlugin::STETrackerQGCPlugin(QGCApplication *app, QGCToolbox* toolbox)
     : QGCCorePlugin         (app, toolbox)
     , _vehicleStateIndex    (0)
     , _strongestAngle       (0)
@@ -58,21 +58,21 @@ VHFTrackerQGCPlugin::VHFTrackerQGCPlugin(QGCApplication *app, QGCToolbox* toolbo
     _delayTimer.setSingleShot(true);
     _targetValueTimer.setSingleShot(true);
 
-    connect(&_delayTimer,       &QTimer::timeout, this, &VHFTrackerQGCPlugin::_delayComplete);
-    connect(&_targetValueTimer, &QTimer::timeout, this, &VHFTrackerQGCPlugin::_targetValueFailed);
-    connect(&_simPulseTimer,    &QTimer::timeout, this, &VHFTrackerQGCPlugin::_simulatePulse);
+    connect(&_delayTimer,       &QTimer::timeout, this, &STETrackerQGCPlugin::_delayComplete);
+    connect(&_targetValueTimer, &QTimer::timeout, this, &STETrackerQGCPlugin::_targetValueFailed);
+    connect(&_simPulseTimer,    &QTimer::timeout, this, &STETrackerQGCPlugin::_simulatePulse);
 }
 
-VHFTrackerQGCPlugin::~VHFTrackerQGCPlugin()
+STETrackerQGCPlugin::~STETrackerQGCPlugin()
 {
 
 }
 
-void VHFTrackerQGCPlugin::setToolbox(QGCToolbox* toolbox)
+void STETrackerQGCPlugin::setToolbox(QGCToolbox* toolbox)
 {
     QGCCorePlugin::setToolbox(toolbox);
-    _vhfSettings = new VHFTrackerSettings(this);
-    _vhfQGCOptions = new VHFTrackerQGCOptions(this, this);
+    _vhfSettings = new STETrackerSettings(this);
+    _vhfQGCOptions = new STETrackerQGCOptions(this, this);
 
     int subDivisions = _vhfSettings->divisions()->rawValue().toInt();
     _rgAngleStrengths.clear();
@@ -85,17 +85,17 @@ void VHFTrackerQGCPlugin::setToolbox(QGCToolbox* toolbox)
     //_simPulseTimer.start(2000);
 }
 
-QString VHFTrackerQGCPlugin::brandImageIndoor(void) const
+QString STETrackerQGCPlugin::brandImageIndoor(void) const
 {
     return QStringLiteral("/res/PaintedDogsLogo.png");
 }
 
-QString VHFTrackerQGCPlugin::brandImageOutdoor(void) const
+QString STETrackerQGCPlugin::brandImageOutdoor(void) const
 {
     return QStringLiteral("/res/PaintedDogsLogo.png");
 }
 
-QVariantList& VHFTrackerQGCPlugin::settingsPages(void)
+QVariantList& STETrackerQGCPlugin::settingsPages(void)
 {
     if(_settingsPages.size() == 0) {
         _settingsPages = QGCCorePlugin::settingsPages();
@@ -104,7 +104,7 @@ QVariantList& VHFTrackerQGCPlugin::settingsPages(void)
     return _settingsPages;
 }
 
-QVariantList& VHFTrackerQGCPlugin::instrumentPages(void)
+QVariantList& STETrackerQGCPlugin::instrumentPages(void)
 {
     if(_instrumentPages.size() == 0) {
         _instrumentPages = QGCCorePlugin::instrumentPages();
@@ -114,7 +114,7 @@ QVariantList& VHFTrackerQGCPlugin::instrumentPages(void)
     return _instrumentPages;
 }
 
-bool VHFTrackerQGCPlugin::mavlinkMessage(Vehicle* vehicle, LinkInterface* link, mavlink_message_t message)
+bool STETrackerQGCPlugin::mavlinkMessage(Vehicle* vehicle, LinkInterface* link, mavlink_message_t message)
 {
     switch (message.msgid) {
 #if 0
@@ -128,7 +128,7 @@ bool VHFTrackerQGCPlugin::mavlinkMessage(Vehicle* vehicle, LinkInterface* link, 
     return true;
 }
 
-bool VHFTrackerQGCPlugin::_handleDebugVect(Vehicle* vehicle, LinkInterface* link, mavlink_message_t& message)
+bool STETrackerQGCPlugin::_handleDebugVect(Vehicle* vehicle, LinkInterface* link, mavlink_message_t& message)
 {
     Q_UNUSED(vehicle);
     Q_UNUSED(link);
@@ -195,20 +195,20 @@ bool VHFTrackerQGCPlugin::_handleDebugVect(Vehicle* vehicle, LinkInterface* link
     return false;
 }
 
-void VHFTrackerQGCPlugin::_updateFlightMachineActive(bool flightMachineActive)
+void STETrackerQGCPlugin::_updateFlightMachineActive(bool flightMachineActive)
 {
     _flightMachineActive = flightMachineActive;
     emit flightMachineActiveChanged(flightMachineActive);
 }
 
-void VHFTrackerQGCPlugin::cancelAndReturn(void)
+void STETrackerQGCPlugin::cancelAndReturn(void)
 {
     _say("Cancelling flight.");
     _resetStateAndRTL();
 }
 
 
-void VHFTrackerQGCPlugin::start(void)
+void STETrackerQGCPlugin::start(void)
 {
     Vehicle* vehicle = qgcApp()->toolbox()->multiVehicleManager()->activeVehicle();
 
@@ -282,9 +282,9 @@ void VHFTrackerQGCPlugin::start(void)
     _nextVehicleState();
 }
 
-void VHFTrackerQGCPlugin::_sendCommandAndVerify(Vehicle* vehicle, MAV_CMD command, double param1, double param2, double param3, double param4, double param5, double param6, double param7)
+void STETrackerQGCPlugin::_sendCommandAndVerify(Vehicle* vehicle, MAV_CMD command, double param1, double param2, double param3, double param4, double param5, double param6, double param7)
 {
-    connect(vehicle, &Vehicle::mavCommandResult, this, &VHFTrackerQGCPlugin::_mavCommandResult);
+    connect(vehicle, &Vehicle::mavCommandResult, this, &STETrackerQGCPlugin::_mavCommandResult);
     vehicle->sendMavCommand(MAV_COMP_ID_ALL,
                             command,
                             false /* showError */,
@@ -297,7 +297,7 @@ void VHFTrackerQGCPlugin::_sendCommandAndVerify(Vehicle* vehicle, MAV_CMD comman
                             static_cast<float>(param7));
 }
 
-void VHFTrackerQGCPlugin::_mavCommandResult(int vehicleId, int component, int command, int result, bool noResponseFromVehicle)
+void STETrackerQGCPlugin::_mavCommandResult(int vehicleId, int component, int command, int result, bool noResponseFromVehicle)
 {
     Q_UNUSED(vehicleId);
     Q_UNUSED(component);
@@ -309,14 +309,14 @@ void VHFTrackerQGCPlugin::_mavCommandResult(int vehicleId, int component, int co
     }
 
     if (!_flightMachineActive) {
-        disconnect(vehicle, &Vehicle::mavCommandResult, this, &VHFTrackerQGCPlugin::_mavCommandResult);
+        disconnect(vehicle, &Vehicle::mavCommandResult, this, &STETrackerQGCPlugin::_mavCommandResult);
         return;
     }
 
     const VehicleState_t& currentState = _vehicleStates[_vehicleStateIndex];
 
     if (currentState.command == CommandTakeoff && command == MAV_CMD_NAV_TAKEOFF) {
-        disconnect(vehicle, &Vehicle::mavCommandResult, this, &VHFTrackerQGCPlugin::_mavCommandResult);
+        disconnect(vehicle, &Vehicle::mavCommandResult, this, &STETrackerQGCPlugin::_mavCommandResult);
         if (noResponseFromVehicle) {
             _say(QStringLiteral("Vehicle did not respond to takeoff command"));
             _updateFlightMachineActive(false);
@@ -325,7 +325,7 @@ void VHFTrackerQGCPlugin::_mavCommandResult(int vehicleId, int component, int co
             _updateFlightMachineActive(false);
         }
     } else if (currentState.command == CommandSetHeading && command == MAV_CMD_DO_REPOSITION) {
-        disconnect(vehicle, &Vehicle::mavCommandResult, this, &VHFTrackerQGCPlugin::_mavCommandResult);
+        disconnect(vehicle, &Vehicle::mavCommandResult, this, &STETrackerQGCPlugin::_mavCommandResult);
         if (noResponseFromVehicle) {
             _say(QStringLiteral("Vehicle did not response to Rotate command. Flight cancelled. Vehicle returning."));
             _resetStateAndRTL();
@@ -336,7 +336,7 @@ void VHFTrackerQGCPlugin::_mavCommandResult(int vehicleId, int component, int co
     }
 }
 
-void VHFTrackerQGCPlugin::_takeoff(Vehicle* vehicle, double takeoffAltRel)
+void STETrackerQGCPlugin::_takeoff(Vehicle* vehicle, double takeoffAltRel)
 {
     double vehicleAltitudeAMSL = vehicle->altitudeAMSL()->rawValue().toDouble();
     if (qIsNaN(vehicleAltitudeAMSL)) {
@@ -357,7 +357,7 @@ void VHFTrackerQGCPlugin::_takeoff(Vehicle* vehicle, double takeoffAltRel)
 
 
 
-void VHFTrackerQGCPlugin::_rotateVehicle(Vehicle* vehicle, double headingDegrees)
+void STETrackerQGCPlugin::_rotateVehicle(Vehicle* vehicle, double headingDegrees)
 {
     _sendCommandAndVerify(
                 vehicle,
@@ -369,7 +369,7 @@ void VHFTrackerQGCPlugin::_rotateVehicle(Vehicle* vehicle, double headingDegrees
                 qQNaN(), qQNaN(), qQNaN());             // no change lat, lon, alt
 }
 
-void VHFTrackerQGCPlugin::_nextVehicleState(void)
+void STETrackerQGCPlugin::_nextVehicleState(void)
 {
     Vehicle* vehicle = qgcApp()->toolbox()->multiVehicleManager()->activeVehicle();
 
@@ -414,12 +414,12 @@ void VHFTrackerQGCPlugin::_nextVehicleState(void)
     if (currentState.fact) {
         _targetValueTimer.setInterval(currentState.targetValueWaitSecs * 1000);
         _targetValueTimer.start();
-        connect(currentState.fact, &Fact::rawValueChanged, this, &VHFTrackerQGCPlugin::_vehicleStateRawValueChanged);
+        connect(currentState.fact, &Fact::rawValueChanged, this, &STETrackerQGCPlugin::_vehicleStateRawValueChanged);
         _vehicleStateRawValueChanged(currentState.fact->rawValue());
     }
 }
 
-void VHFTrackerQGCPlugin::_vehicleStateRawValueChanged(QVariant rawValue)
+void STETrackerQGCPlugin::_vehicleStateRawValueChanged(QVariant rawValue)
 {
     if (!_flightMachineActive) {
         Fact* fact = dynamic_cast<Fact*>(sender());
@@ -427,40 +427,40 @@ void VHFTrackerQGCPlugin::_vehicleStateRawValueChanged(QVariant rawValue)
             qWarning() << "Dynamic cast failed!";
             return;
         }
-        disconnect(fact, &Fact::rawValueChanged, this, &VHFTrackerQGCPlugin::_vehicleStateRawValueChanged);
+        disconnect(fact, &Fact::rawValueChanged, this, &STETrackerQGCPlugin::_vehicleStateRawValueChanged);
     }
 
     const VehicleState_t& currentState = _vehicleStates[_vehicleStateIndex];
 
-    qCDebug(VHFTrackerQGCPluginLog) << "Waiting for value actual:wait:variance" << rawValue.toDouble() << currentState.targetValue << currentState.targetVariance;
+    qCDebug(STETrackerQGCPluginLog) << "Waiting for value actual:wait:variance" << rawValue.toDouble() << currentState.targetValue << currentState.targetVariance;
 
     if (qAbs(rawValue.toDouble() - currentState.targetValue) < currentState.targetVariance) {
         _targetValueTimer.stop();
-        disconnect(currentState.fact, &Fact::rawValueChanged, this, &VHFTrackerQGCPlugin::_vehicleStateRawValueChanged);
+        disconnect(currentState.fact, &Fact::rawValueChanged, this, &STETrackerQGCPlugin::_vehicleStateRawValueChanged);
         _vehicleStateIndex++;
         _nextVehicleState();
     }
 }
 
-void VHFTrackerQGCPlugin::_say(QString text)
+void STETrackerQGCPlugin::_say(QString text)
 {
-    qCDebug(VHFTrackerQGCPluginLog) << text;
+    qCDebug(STETrackerQGCPluginLog) << text;
     _toolbox->audioOutput()->say(text.toLower());
 }
 
-int VHFTrackerQGCPlugin::_rawPulseToPct(double rawPulse)
+int STETrackerQGCPlugin::_rawPulseToPct(double rawPulse)
 {
     double maxPossiblePulse = static_cast<double>(_vhfSettings->maxPulse()->rawValue().toDouble());
     return static_cast<int>(100.0 * (rawPulse / maxPossiblePulse));
 }
 
-void VHFTrackerQGCPlugin::_delayComplete(void)
+void STETrackerQGCPlugin::_delayComplete(void)
 {
     double maxPulse = 0;
     foreach(double pulse, _rgPulseValues) {
         maxPulse = qMax(maxPulse, pulse);
     }
-    qCDebug(VHFTrackerQGCPluginLog) << "_delayComplete" << maxPulse << _rgPulseValues;
+    qCDebug(STETrackerQGCPluginLog) << "_delayComplete" << maxPulse << _rgPulseValues;
     _rgPulseValues.clear();
     _rgAngleStrengths[_nextSlice] = maxPulse;
 
@@ -495,18 +495,18 @@ void VHFTrackerQGCPlugin::_delayComplete(void)
     _nextVehicleState();
 }
 
-void VHFTrackerQGCPlugin::_targetValueFailed(void)
+void STETrackerQGCPlugin::_targetValueFailed(void)
 {
     _say("Failed to reach target.");
     cancelAndReturn();
 }
 
-void VHFTrackerQGCPlugin::_detectComplete(void)
+void STETrackerQGCPlugin::_detectComplete(void)
 {
 
 }
 
-bool VHFTrackerQGCPlugin::_armVehicleAndValidate(Vehicle* vehicle)
+bool STETrackerQGCPlugin::_armVehicleAndValidate(Vehicle* vehicle)
 {
     if (vehicle->armed()) {
         return true;
@@ -539,7 +539,7 @@ bool VHFTrackerQGCPlugin::_armVehicleAndValidate(Vehicle* vehicle)
     return armedChanged;
 }
 
-bool VHFTrackerQGCPlugin::_setRTLFlightModeAndValidate(Vehicle* vehicle)
+bool STETrackerQGCPlugin::_setRTLFlightModeAndValidate(Vehicle* vehicle)
 {
     QString rtlFlightMode = vehicle->rtlFlightMode();
 
@@ -574,19 +574,19 @@ bool VHFTrackerQGCPlugin::_setRTLFlightModeAndValidate(Vehicle* vehicle)
     return flightModeChanged;
 }
 
-void VHFTrackerQGCPlugin::_resetStateAndRTL(void)
+void STETrackerQGCPlugin::_resetStateAndRTL(void)
 {
     _delayTimer.stop();
     _targetValueTimer.stop();
 
     Vehicle* vehicle = qgcApp()->toolbox()->multiVehicleManager()->activeVehicle();
     if (vehicle) {
-        disconnect(vehicle, &Vehicle::mavCommandResult, this, &VHFTrackerQGCPlugin::_mavCommandResult);
+        disconnect(vehicle, &Vehicle::mavCommandResult, this, &STETrackerQGCPlugin::_mavCommandResult);
     }
 
     for (const VehicleState_t& vehicleState: _vehicleStates) {
         if (vehicleState.fact) {
-            disconnect(vehicleState.fact, &Fact::rawValueChanged, this, &VHFTrackerQGCPlugin::_vehicleStateRawValueChanged);
+            disconnect(vehicleState.fact, &Fact::rawValueChanged, this, &STETrackerQGCPlugin::_vehicleStateRawValueChanged);
         }
     }
 
@@ -595,7 +595,7 @@ void VHFTrackerQGCPlugin::_resetStateAndRTL(void)
     _updateFlightMachineActive(false);
 }
 
-bool VHFTrackerQGCPlugin::adjustSettingMetaData(const QString& settingsGroup, FactMetaData& metaData)
+bool STETrackerQGCPlugin::adjustSettingMetaData(const QString& settingsGroup, FactMetaData& metaData)
 {
     Q_UNUSED(settingsGroup);
     Q_UNUSED(metaData);
@@ -610,7 +610,7 @@ bool VHFTrackerQGCPlugin::adjustSettingMetaData(const QString& settingsGroup, Fa
 #endif
 }
 
-void VHFTrackerQGCPlugin::_simulatePulse(void)
+void STETrackerQGCPlugin::_simulatePulse(void)
 {
     Vehicle* vehicle = qgcApp()->toolbox()->multiVehicleManager()->activeVehicle();
 
@@ -651,7 +651,7 @@ void VHFTrackerQGCPlugin::_simulatePulse(void)
     }
 }
 
-void VHFTrackerQGCPlugin::_sendFreqChange(int frequency)
+void STETrackerQGCPlugin::_sendFreqChange(int frequency)
 {
     Vehicle* vehicle = qgcApp()->toolbox()->multiVehicleManager()->activeVehicle();
 
@@ -675,7 +675,7 @@ void VHFTrackerQGCPlugin::_sendFreqChange(int frequency)
     }
 }
 
-void VHFTrackerQGCPlugin::setFrequency(int frequency)
+void STETrackerQGCPlugin::setFrequency(int frequency)
 {
     _sendFreqChange(frequency);
 }
