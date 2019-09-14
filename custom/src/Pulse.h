@@ -18,8 +18,8 @@ public:
     void startReplay(void);
 
     Q_PROPERTY(bool             captureMode     MEMBER _captureRawData  CONSTANT)
-    Q_PROPERTY(QGeoCoordinate   currentLocation MEMBER _currentLocation NOTIFY currentLocationChanged)
-    Q_PROPERTY(double           heading         MEMBER _heading         NOTIFY headingChanged)
+    Q_PROPERTY(QGeoCoordinate   planeCoordinate MEMBER _planeCoordinate   NOTIFY planeCoordinateChanged)
+    Q_PROPERTY(double           planeHeading    MEMBER _planeHeading    NOTIFY planeHeadingChanged)
 
     Q_INVOKABLE void    setFreq         (int freq);
     Q_INVOKABLE void    setGain         (int gain);
@@ -31,8 +31,8 @@ signals:
     void pulse                  (int channelIndex, float cpuTemp, double pulseValue);
     void setGainSignal          (int gain);
     void setFreqSignal          (int freq);
-    void currentLocationChanged (QGeoCoordinate currentLocation);
-    void headingChanged         (double heading);
+    void planeCoordinateChanged (QGeoCoordinate currentLocation);
+    void planeHeadingChanged    (double heading);
 
 private slots:
     void _readNextPulse(void);
@@ -44,7 +44,7 @@ private:
     QTimer          _replayTimer;
     QString         _nextRawDataLine;
     bool            _captureRawData;
-    QGeoCoordinate  _currentLocation;
-    double          _heading;
+    QGeoCoordinate  _planeCoordinate;
+    double          _planeHeading;
 };
 

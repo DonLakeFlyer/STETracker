@@ -44,37 +44,25 @@ FlightMap {
 
     property rect   centerViewport:             Qt.rect(0, 0, width, height)
 
-    property var    _planMasterController:      planMasterController
-    property var    _missionController:         _planMasterController.missionController
-    property var    _geoFenceController:        _planMasterController.geoFenceController
-    property var    _rallyPointController:      _planMasterController.rallyPointController
-    property var    _activeVehicle:             QGroundControl.multiVehicleManager.activeVehicle
+    property var    _activeVehicle:             QGroundControl.multiVehicleManager.offlineEditingVehicle
     property var    _activeVehicleCoordinate:   _activeVehicle ? _activeVehicle.coordinate : QtPositioning.coordinate()
     property real   _toolButtonTopMargin:       parent.height - ScreenTools.availableHeight + (ScreenTools.defaultFontPixelHeight / 2)
-    property bool   _airspaceEnabled:           QGroundControl.airmapSupported ? (QGroundControl.settingsManager.airMapSettings.enableAirMap.rawValue && QGroundControl.airspaceManager.connected): false
 
     property bool   _disableVehicleTracking:    false
     property bool   _keepVehicleCentered:       _mainIsMap ? false : true
 
-    function updateAirspace(reset) {
-        if(_airspaceEnabled) {
-            var coordinateNW = flightMap.toCoordinate(Qt.point(0,0), false /* clipToViewPort */)
-            var coordinateSE = flightMap.toCoordinate(Qt.point(width,height), false /* clipToViewPort */)
-            if(coordinateNW.isValid && coordinateSE.isValid) {
-                QGroundControl.airspaceManager.setROI(coordinateNW, coordinateSE, false /*planView*/, reset)
-            }
-        }
-    }
+
+    property var    _pulse:             QGroundControl.corePlugin.pulse
+    property var    _planeCoordinate:   _pulse.planeCoordinate
+    property double _planeHeading:      _pulse.planeHeading
 
     // Track last known map position and zoom from Fly view in settings
 
     onZoomLevelChanged: {
         QGroundControl.flightMapZoom = zoomLevel
-        updateAirspace(false)
     }
     onCenterChanged: {
         QGroundControl.flightMapPosition = center
-        updateAirspace(false)
     }
 
     // When the user pans the map we stop responding to vehicle coordinate updates until the panRecenterTimer fires
@@ -85,10 +73,6 @@ FlightMap {
             _disableVehicleTracking = true
             panRecenterTimer.restart()
         }
-    }
-
-    on_AirspaceEnabledChanged: {
-        updateAirspace(true)
     }
 
     function pointInRect(point, rect) {
@@ -166,46 +150,6 @@ FlightMap {
     QGCPalette { id: qgcPal; colorGroupEnabled: true }
     QGCMapPalette { id: mapPal; lightColors: isSatelliteMap }
 
-    Connections {
-        target: _missionController
-
-        onNewItemsFromVehicle: {
-            var visualItems = _missionController.visualItems
-            if (visualItems && visualItems.count !== 1) {
-                mapFitFunctions.fitMapViewportToMissionItems()
-                firstVehiclePositionReceived = true
-            }
-        }
-    }
-
-    ExclusiveGroup {
-        id: _mapTypeButtonsExclusiveGroup
-    }
-
-    MapFitFunctions {
-        id:                         mapFitFunctions // The name for this id cannot be changed without breaking references outside of this code. Beware!
-        map:                        _flightMap
-        usePlannedHomePosition:     false
-        planMasterController:       _planMasterController
-
-        property real leftToolWidth:    toolStrip.x + toolStrip.width
-    }
-
-    // Add trajectory points to the map
-    MapItemView {
-        model: _mainIsMap ? _activeVehicle ? _activeVehicle.trajectoryPoints : 0 : 0
-
-        delegate: MapPolyline {
-            line.width: 3
-            line.color: "red"
-            z:          QGroundControl.zOrderTrajectoryLines
-            path: [
-                object.coordinate1,
-                object.coordinate2,
-            ]
-        }
-    }
-
     // Add the vehicles to the map
     MapItemView {
         model: QGroundControl.multiVehicleManager.vehicles
@@ -219,253 +163,37 @@ FlightMap {
         }
     }
 
-    // Add ADSB vehicles to the map
-    MapItemView {
-        model: _activeVehicle ? _activeVehicle.adsbVehicles : []
-        property var _activeVehicle: QGroundControl.multiVehicleManager.activeVehicle
-        delegate: VehicleMapItem {
-            coordinate:     object.coordinate
-            altitude:       object.altitude
-            callsign:       object.callsign
-            heading:        object.heading
-            alert:          object.alert
-            map:            flightMap
-            z:              QGroundControl.zOrderVehicles
-        }
-    }
-
-    // Add the items associated with each vehicles flight plan to the map
-    Repeater {
-        model: QGroundControl.multiVehicleManager.vehicles
-
-        PlanMapItems {
-            map:                flightMap
-            largeMapView:       _mainIsMap
-            masterController:   masterController
-            isActiveVehicle:    _vehicle.active
-
-            property var _vehicle: object
-
-            PlanMasterController {
-                id: masterController
-                Component.onCompleted: startStaticActiveVehicle(object)
-            }
-        }
-    }
-
-    // Allow custom builds to add map items
-    CustomMapItems {
-        map:            flightMap
-        largeMapView:   _mainIsMap
-    }
-
-    GeoFenceMapVisuals {
-        map:                    flightMap
-        myGeoFenceController:   _geoFenceController
-        interactive:            false
-        planView:               false
-        homePosition:           _activeVehicle && _activeVehicle.homePosition.isValid ? _activeVehicle.homePosition :  QtPositioning.coordinate()
-    }
-
-    // Rally points on map
-    MapItemView {
-        model: _rallyPointController.points
-
-        delegate: MapQuickItem {
-            id:             itemIndicator
-            anchorPoint.x:  sourceItem.anchorPointX
-            anchorPoint.y:  sourceItem.anchorPointY
-            coordinate:     object.coordinate
-            z:              QGroundControl.zOrderMapItems
-
-            sourceItem: MissionItemIndexLabel {
-                id:         itemIndexLabel
-                label:      qsTr("R", "rally point map item label")
-            }
-        }
-    }
-
-    // Camera trigger points
-    MapItemView {
-        model: _activeVehicle ? _activeVehicle.cameraTriggerPoints : 0
-
-        delegate: CameraTriggerIndicator {
-            coordinate:     object.coordinate
-            z:              QGroundControl.zOrderTopMost
-        }
-    }
-
-    // GoTo Location visuals
     MapQuickItem {
-        id:             gotoLocationItem
-        visible:        false
-        z:              QGroundControl.zOrderMapItems
-        anchorPoint.x:  sourceItem.anchorPointX
-        anchorPoint.y:  sourceItem.anchorPointY
+        anchorPoint.x:  vehicleItem.width  / 2
+        anchorPoint.y:  vehicleItem.height / 2
+        visible:        coordinate.isValid
+        coordinate:     _planeCoordinate
 
-        sourceItem: MissionItemIndexLabel {
-            checked:    true
-            index:      -1
-            label:      qsTr("Goto here", "Goto here waypoint")
-        }
+        sourceItem: Item {
+            id:         vehicleItem
+            width:      vehicleIcon.width
+            height:     vehicleIcon.height
 
-        property bool inGotoFlightMode: _activeVehicle ? _activeVehicle.flightMode === _activeVehicle.gotoFlightMode : false
-        property var activeVehicle: _activeVehicle
-
-        onInGotoFlightModeChanged: {
-            if (!inGotoFlightMode && visible) {
-                // Hide goto indicator when vehicle falls out of guided mode
-                visible = false
+            Rectangle {
+                id:                 vehicleShadow
+                anchors.fill:       vehicleIcon
+                color:              Qt.rgba(1,1,1,1)
+                radius:             width * 0.5
+                visible:            false
             }
-        }
 
-        onActiveVehicleChanged: {
-            if (!_activeVehicle) {
-                visible = false
-            }
-        }
-
-        function show(coord) {
-            gotoLocationItem.coordinate = coord
-            gotoLocationItem.visible = true
-        }
-
-        function hide() {
-            gotoLocationItem.visible = false
-        }
-
-        function actionConfirmed() {
-            // We leave the indicator visible. The handling for onInGuidedModeChanged will hide it.
-        }
-
-        function actionCancelled() {
-            hide()
-        }
-    }
-
-    // Orbit editing visuals
-    QGCMapCircleVisuals {
-        id:             orbitMapCircle
-        mapControl:     parent
-        mapCircle:      _mapCircle
-        visible:        false
-
-        property alias center:              _mapCircle.center
-        property alias clockwiseRotation:   _mapCircle.clockwiseRotation
-        property var   activeVehicle:       _activeVehicle
-
-        readonly property real defaultRadius: 30
-
-        onActiveVehicleChanged: {
-            if (!_activeVehicle) {
-                visible = false
-            }
-        }
-
-        function show(coord) {
-            _mapCircle.radius.rawValue = defaultRadius
-            orbitMapCircle.center = coord
-            orbitMapCircle.visible = true
-        }
-
-        function hide() {
-            orbitMapCircle.visible = false
-        }
-
-        function actionConfirmed() {
-            // Live orbit status is handled by telemetry so we hide here and telemetry will show again.
-            hide()
-        }
-
-        function actionCancelled() {
-            hide()
-        }
-
-        function radius() {
-            return _mapCircle.radius.rawValue
-        }
-
-        Component.onCompleted: guidedActionsController.orbitMapCircle = orbitMapCircle
-
-        QGCMapCircle {
-            id:                 _mapCircle
-            interactive:        true
-            radius.rawValue:    30
-            showRotation:       true
-            clockwiseRotation:  true
-        }
-    }
-
-    // Orbit telemetry visuals
-    QGCMapCircleVisuals {
-        id:             orbitTelemetryCircle
-        mapControl:     parent
-        mapCircle:      _activeVehicle ? _activeVehicle.orbitMapCircle : null
-        visible:        _activeVehicle ? _activeVehicle.orbitActive : false
-    }
-
-    MapQuickItem {
-        id:             orbitCenterIndicator
-        anchorPoint.x:  sourceItem.anchorPointX
-        anchorPoint.y:  sourceItem.anchorPointY
-        coordinate:     _activeVehicle ? _activeVehicle.orbitMapCircle.center : QtPositioning.coordinate()
-        visible:        orbitTelemetryCircle.visible
-
-        sourceItem: MissionItemIndexLabel {
-            checked:    true
-            index:      -1
-            label:      qsTr("Orbit", "Orbit waypoint")
-        }
-    }
-
-    // Handle guided mode clicks
-    MouseArea {
-        anchors.fill: parent
-
-        Menu {
-            id: clickMenu
-
-            property var coord
-
-            MenuItem {
-                text:           qsTr("Go to location")
-                visible:        guidedActionsController.showGotoLocation
-
-                onTriggered: {
-                    gotoLocationItem.show(clickMenu.coord)
-                    orbitMapCircle.hide()
-                    guidedActionsController.confirmAction(guidedActionsController.actionGoto, clickMenu.coord, gotoLocationItem)
+            Image {
+                id:                 vehicleIcon
+                source:             "/qmlimages/vehicleArrowOpaque.svg"
+                mipmap:             true
+                width:              ScreenTools.defaultFontPixelHeight * 3
+                sourceSize.width:   width
+                fillMode:           Image.PreserveAspectFit
+                transform: Rotation {
+                    origin.x:       vehicleIcon.width  / 2
+                    origin.y:       vehicleIcon.height / 2
+                    angle:          isNaN(_planeHeading) ? 0 : _planeHeading
                 }
-            }
-
-            MenuItem {
-                text:           qsTr("Orbit at location")
-                visible:        guidedActionsController.showOrbit
-
-                onTriggered: {
-                    orbitMapCircle.show(clickMenu.coord)
-                    gotoLocationItem.hide()
-                    guidedActionsController.confirmAction(guidedActionsController.actionOrbit, clickMenu.coord, orbitMapCircle)
-                }
-            }
-        }
-
-        onClicked: {
-            if (guidedActionsController.guidedUIVisible || (!guidedActionsController.showGotoLocation && !guidedActionsController.showOrbit)) {
-                return
-            }
-            orbitMapCircle.hide()
-            gotoLocationItem.hide()
-            var clickCoord = flightMap.toCoordinate(Qt.point(mouse.x, mouse.y), false /* clipToViewPort */)
-            if (guidedActionsController.showGotoLocation && guidedActionsController.showOrbit) {
-                clickMenu.coord = clickCoord
-                clickMenu.popup()
-            } else if (guidedActionsController.showGotoLocation) {
-                gotoLocationItem.show(clickCoord)
-                guidedActionsController.confirmAction(guidedActionsController.actionGoto, clickCoord)
-            } else if (guidedActionsController.showOrbit) {
-                orbitMapCircle.show(clickCoord)
-                guidedActionsController.confirmAction(guidedActionsController.actionOrbit, clickCoord)
             }
         }
     }
@@ -498,27 +226,4 @@ FlightMap {
             }
         ]
     }
-
-    // Airspace overlap support
-    MapItemView {
-        model:              _airspaceEnabled && QGroundControl.settingsManager.airMapSettings.enableAirspace && QGroundControl.airspaceManager.airspaceVisible ? QGroundControl.airspaceManager.airspaces.circles : []
-        delegate: MapCircle {
-            center:         object.center
-            radius:         object.radius
-            color:          object.color
-            border.color:   object.lineColor
-            border.width:   object.lineWidth
-        }
-    }
-
-    MapItemView {
-        model:              _airspaceEnabled && QGroundControl.settingsManager.airMapSettings.enableAirspace && QGroundControl.airspaceManager.airspaceVisible ? QGroundControl.airspaceManager.airspaces.polygons : []
-        delegate: MapPolygon {
-            path:           object.polygon
-            color:          object.color
-            border.color:   object.lineColor
-            border.width:   object.lineWidth
-        }
-    }
-
 }

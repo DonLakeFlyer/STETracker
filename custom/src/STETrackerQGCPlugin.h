@@ -36,7 +36,7 @@ public:
     QGCOptions*         options                 (void) final { return qobject_cast<QGCOptions*>(_vhfQGCOptions); }
 
     // Overrides from QGCTool
-    void setToolbox(QGCToolbox* toolbox) final;
+    void setToolbox     (QGCToolbox* toolbox) final;
 
 signals:
 

@@ -11,7 +11,7 @@
 Pulse::Pulse(bool captureRawData)
     : _replayStream     (nullptr)
     , _captureRawData   (captureRawData)
-    , _heading          (0)
+    , _planeHeading     (0)
 {
     _replayTimer.setSingleShot(true);
     _replayTimer.setTimerType(Qt::PreciseTimer);
@@ -105,8 +105,8 @@ void Pulse::_readNextPulse(void)
     _lastReplayMsecs = rgParts[0].toLong();
     emit pulse(rgParts[3].toInt(), 0, rgParts[4].toDouble());
 
-    _currentLocation = QGeoCoordinate(rgParts[1].toDouble(), rgParts[2].toDouble());
-    emit currentLocationChanged(_currentLocation);
+    _planeCoordinate = QGeoCoordinate(rgParts[1].toDouble(), rgParts[2].toDouble());
+    emit planeCoordinateChanged(_planeCoordinate);
 
     if (!_replayStream->atEnd()) {
         _nextRawDataLine = _replayStream->readLine();
