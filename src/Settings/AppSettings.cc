@@ -37,7 +37,7 @@ DECLARE_SETTINGGROUP(App, "")
 {
     QQmlEngine::setObjectOwnership(this, QQmlEngine::CppOwnership);
     qmlRegisterUncreatableType<AppSettings>("QGroundControl.SettingsManager", 1, 0, "AppSettings", "Reference only");
-    QGCPalette::setGlobalTheme(indoorPalette()->rawValue().toBool() ? QGCPalette::Dark : QGCPalette::Light);
+    QGCPalette::setGlobalTheme(QGCPalette::Light);
 
     // Instantiate savePath so we can check for override and setup default path if needed
 

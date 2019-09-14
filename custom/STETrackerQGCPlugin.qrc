@@ -1,7 +1,6 @@
 <RCC>
     <qresource prefix="/qml">
-        <file alias="VHFTrackerFlyViewOverlay.qml">src/VHFTrackerFlyViewOverlay.qml</file>
-        <file alias="VHFTrackerWidget.qml">src/VHFTrackerWidget.qml</file>
+        <file alias="STETrackerFlyViewOverlay.qml">src/STETrackerFlyViewOverlay.qml</file>
         <file alias="DirectionMapItem.qml">src/DirectionMapItem.qml</file>
         <file alias="LineMapItem.qml">src/LineMapItem.qml</file>
     </qresource>
