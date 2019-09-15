@@ -30,25 +30,27 @@ Rectangle {
 
     QGCPalette { id: qgcPal; colorGroupEnabled: true }
 
-    property var    _corePlugin:        QGroundControl.corePlugin
-    property var    _pulse:             _corePlugin.pulse
-    property var    _vhfSettings:       _corePlugin.vhfSettings
-    property var    _divisions:         _vhfSettings.divisions.rawValue
-    property real   _margins:           ScreenTools.defaultFontPixelWidth
+    property var    _corePlugin:            QGroundControl.corePlugin
+    property var    _pulse:                 _corePlugin.pulse
+    property real   _margins:               ScreenTools.defaultFontPixelWidth
+    property real   _largeFontPixelWidth:   ScreenTools.defaultFontPixelWidth * ScreenTools.largeFontPointRatio
+    property real   _largeFontPixelHeight:  ScreenTools.defaultFontPixelHeight * ScreenTools.largeFontPointRatio
+    property real   _minRawPulse:           0.01
+    property real   _maxRawPulse:           20
+    property var    _settings:              _corePlugin.vhfSettings
 
     readonly property real gainTargetPulsePercent:          0.75
     readonly property real gainTargetPulsePercentWindow:    0.1
     readonly property int  minGain:                         1
-    readonly property int  maxGain:                         20
+    readonly property int  maxGain:                         21
     readonly property int  channelTimeoutMSecs:             10000
-    readonly property var   dbRadiationPct:                 [ 1.0,  .97,    .94,    .85,    .63,    .40,    .10,    .20,    .30,    .40,    .45,    0.5,    0.51 ]
-    readonly property var   dbRadiationAngle:               [ 0,    15,     30,     45,     60,     75,     90,     105,    120,    135,    150,    165,    180 ]
-    readonly property real  dbRadiationAngleInc:            15
+    readonly property var  dbRadiationPct:                 [ 1.0,  .97,    .94,    .85,    .63,    .40,    .10,    .20,    .30,    .40,    .45,    0.5,    0.51 ]
+    readonly property var  dbRadiationAngle:               [ 0,    15,     30,     45,     60,     75,     90,     105,    120,    135,    150,    165,    180 ]
+    readonly property real dbRadiationAngleInc:            15
 
-    property real  dbRadiationMinPulse:            settings.maxRawPulse * 0.25
+    property real  dbRadiationMinPulse:            _maxRawPulse * 0.25
 
-    property real pulseRange:           settings.maxRawPulse - settings.minRawPulse
-    property int  gain:                 21
+    property real pulseRange:           _maxRawPulse - _minRawPulse
     property real heading:              NaN
     property real newHeading:           0
     property bool headingAvailable:     false
@@ -100,15 +102,6 @@ Rectangle {
     property real fontPixelWidthLarge:  textMeasureLarge.fontPixelWidth
     property real fontPixelHeightLarge: textMeasureLarge.fontPixelHeight
 
-    Item {
-        id: settings
-
-        property int    frequency:      1460000
-        property real   minRawPulse:    0.01
-        property real   maxRawPulse:    20
-        property bool   autoGain:       false
-    }
-
     onChannel0PulseValueChanged: { channel0Background.color = "green"; channel0Animate.restart() }
     onChannel1PulseValueChanged: { channel1Background.color = "green"; channel1Animate.restart() }
     onChannel2PulseValueChanged: { channel2Background.color = "green"; channel2Animate.restart() }
@@ -120,7 +113,7 @@ Rectangle {
     onChannel3PulsePercentChanged: channel3PulseSlice.requestPaint()
 
     Component.onCompleted: {
-        freqInt = settings.frequency
+        freqInt = _settings.frequency.rawValue
         freqStart = freqInt
         updateDigitsFromFreqInt()
     }
@@ -135,7 +128,7 @@ Rectangle {
 
     function setFrequencyFromDigits() {
         freqInt = (freqDigit1 * 1000000) + (freqDigit2 * 100000) + (freqDigit3 * 10000) + (freqDigit4 * 1000) + (freqDigit5 * 100) + (freqDigit6 * 10) + freqDigit7
-        settings.frequency = freqInt
+        _settings.frequency.rawValue = freqInt
         sendFreqChange()
     }
 
@@ -176,7 +169,7 @@ Rectangle {
         if (pulseValue == 0) {
             pulsePercent = 0
         } else {
-            pulsePercent = (pulseValue - settings.minRawPulse) / pulseRange
+            pulsePercent = (pulseValue - _minRawPulse) / pulseRange
         }
         if (channelIndex === 0) {
             channel0Active = true
@@ -227,11 +220,11 @@ Rectangle {
 
         // Update zoom factor
         var maxChannelPulseValue = Math.max(channel0PulseValue, Math.max(channel1PulseValue, Math.max(channel2PulseValue, channel3PulseValue)))
-        var normalizedMaxChannelPulseValue = maxChannelPulseValue - settings.minRawPulse
-        var normalizedMaxRawPulse = settings.maxRawPulse - settings.minRawPulse
+        var normalizedMaxChannelPulseValue = maxChannelPulseValue - _minRawPulse
+        var normalizedMaxRawPulse = _maxRawPulse - _minRawPulse
 
         var newZoomFactor = 1
-        if (maxChannelPulseValue < settings.minRawPulse) {
+        if (maxChannelPulseValue < _minRawPulse) {
             newZoomFactor = 4
         } else if (normalizedMaxChannelPulseValue < normalizedMaxRawPulse / 2) {
             if (normalizedMaxChannelPulseValue < normalizedMaxRawPulse / 4) {
@@ -372,8 +365,8 @@ Rectangle {
 
             //console.log(qsTr("heading(%1) radiationIndex(%2) powerLow(%3) powerHigh(%4) powerRange(%5) slicePct(%6) powerHeading(%7)").arg(heading).arg(radiationIndex).arg(powerLow).arg(powerHigh).arg(powerRange).arg(slicePct).arg(powerHeading))
 
-            var simulatedMaxRawPulse = settings.maxRawPulse
-            var pulseValue = dbRadiationMinPulse + ((settings.maxRawPulse - dbRadiationMinPulse) * powerHeading)
+            var simulatedMaxRawPulse = _maxRawPulse
+            var pulseValue = dbRadiationMinPulse + ((_maxRawPulse - dbRadiationMinPulse) * powerHeading)
             pulseValue *= pulseAdjustFactor
 
             //console.log("heading:pulse", heading, pulseValue)
@@ -461,24 +454,25 @@ Rectangle {
         repeat:     true
 
         onTriggered: {
-            if (settings.autoGain) {
+            if (_settings.autoGain.value) {
                 var maxPulsePct = Math.max(channel0PulsePercent, Math.max(channel1PulsePercent, Math.max(channel2PulsePercent, channel3PulsePercent)))
                 //console.log("maxPulsePct", maxPulsePct)
 
-                var newGain = gain
+                var curGain = _settings.gain.rawValue
+                var newGain = curGain
                 if (maxPulsePct > gainTargetPulsePercent + gainTargetPulsePercentWindow) {
-                    if (gain > minGain) {
-                        newGain = gain - 1
+                    if (curGain > minGain) {
+                        newGain = curGain - 1
                     }
                 } else if (maxPulsePct < gainTargetPulsePercent - gainTargetPulsePercentWindow) {
-                    if (gain < maxGain) {
-                        newGain = gain + 1
+                    if (curGain < maxGain) {
+                        newGain = curGain + 1
                     }
                 }
-                if (newGain !== gain) {
+                if (newGain !== curGain) {
                     console.log("Adjusting gain", newGain)
-                    gain = newGain
-                    _pulse.setGain(gain)
+                    _settings.gain.rawValue = newGain
+                    _pulse.setGain(newGain)
                 }
             }
         }
@@ -559,7 +553,8 @@ Rectangle {
 
     Rectangle {
         id:                 headingIndicator
-        anchors.margins:    fontPixelWidth
+        anchors.margins:    _margins
+        anchors.top:        parent.top
         anchors.left:       parent.left
         anchors.right:      parent.right
         height:             width
@@ -664,17 +659,18 @@ Rectangle {
     }
 
     Column {
-        anchors.margins:    fontPixelWidth
+        anchors.margins:    _margins
+        anchors.topMargin:  ScreenTools.defaultFontPixelHeight
         anchors.top:        headingIndicator.bottom
         anchors.left:       parent.left
         anchors.right:      parent.right
+        spacing:            ScreenTools.defaultFontPixelHeight
 
-        Text {
+        QGCLabel {
             anchors.left:   parent.left
             anchors.right:  parent.right
-            text:           settings.frequency
-            font.pointSize: 100
-            fontSizeMode:   Text.HorizontalFit
+            text:           _settings.frequency.value
+            font.pointSize:     ScreenTools.largeFontPointSize
 
             MouseArea {
                 anchors.fill:   parent
@@ -682,25 +678,18 @@ Rectangle {
             }
         }
 
-        Text {
+        QGCLabel {
             anchors.left:       parent.left
             anchors.right:      parent.right
             text:               "Zoom " + zoomFactor
-            font.pointSize:     100
-            fontSizeMode:       Text.HorizontalFit
-
-            MouseArea {
-                anchors.fill:   parent
-                onClicked:      gainEditor.visible = true
-            }
+            font.pointSize:     ScreenTools.largeFontPointSize
         }
 
-        Text {
+        QGCLabel {
             anchors.left:       parent.left
             anchors.right:      parent.right
-            text:               (settings.autoGain ? "Auto" : "Manual") + " Gain " + gain
-            font.pointSize:     100
-            fontSizeMode:       Text.HorizontalFit
+            text:               (_settings.autoGain.value ? "Auto" : "Manual") + " Gain " + _settings.gain.value
+            font.pointSize:     ScreenTools.largeFontPointSize
 
             MouseArea {
                 anchors.fill:   parent
@@ -710,7 +699,7 @@ Rectangle {
     }
 
     GridLayout {
-        anchors.margins:    fontPixelWidth
+        anchors.margins:    _margins
         anchors.bottom:     parent.bottom
         columns:            2
 
@@ -726,9 +715,9 @@ Rectangle {
                 duration:   500
             }
 
-            Label { id: label0; text: "Channel 0" }
+            QGCLabel { id: label0; text: "Channel 0" }
         }
-        Label { text: channel0Active ? (qsTr("%1 %2% %3c %4g").arg(channel0PulseValue.toFixed(3)).arg(channel0PulsePercent.toFixed(1)).arg(channel0CPUTemp).arg(channel0Gain)) : "DISCONNECTED" }
+        QGCLabel { text: channel0Active ? (qsTr("%1 %2% %3c %4g").arg(channel0PulseValue.toFixed(3)).arg(channel0PulsePercent.toFixed(1)).arg(channel0CPUTemp).arg(channel0Gain)) : "DISCONNECTED" }
 
         Rectangle {
             id:     channel1Background
@@ -742,9 +731,9 @@ Rectangle {
                 duration:   500
             }
 
-            Label { id: label1; text: "Channel 1" }
+            QGCLabel { id: label1; text: "Channel 1" }
         }
-        Label { text: channel1Active ? (qsTr("%1 %2% %3c %4g").arg(channel1PulseValue.toFixed(3)).arg(channel1PulsePercent.toFixed(1)).arg(channel1CPUTemp).arg(channel1Gain)) : "DISCONNECTED" }
+        QGCLabel { text: channel1Active ? (qsTr("%1 %2% %3c %4g").arg(channel1PulseValue.toFixed(3)).arg(channel1PulsePercent.toFixed(1)).arg(channel1CPUTemp).arg(channel1Gain)) : "DISCONNECTED" }
 
         Rectangle {
             id:     channel2Background
@@ -758,9 +747,9 @@ Rectangle {
                 duration:   500
             }
 
-            Label { id: label2; text: "Channel 2" }
+            QGCLabel { id: label2; text: "Channel 2" }
         }
-        Label { text: channel2Active ? (qsTr("%1 %2% %3c %4g").arg(channel2PulseValue.toFixed(3)).arg(channel2PulsePercent.toFixed(1)).arg(channel2CPUTemp).arg(channel2Gain)) : "DISCONNECTED" }
+        QGCLabel { text: channel2Active ? (qsTr("%1 %2% %3c %4g").arg(channel2PulseValue.toFixed(3)).arg(channel2PulsePercent.toFixed(1)).arg(channel2CPUTemp).arg(channel2Gain)) : "DISCONNECTED" }
 
         Rectangle {
             id:     channel3Background
@@ -774,143 +763,31 @@ Rectangle {
                 duration:   500
             }
 
-            Label { id: label3; text: "Channel 3" }
+            QGCLabel { id: label3; text: "Channel 3" }
         }
-        Label { text: channel3Active ? (qsTr("%1 %2% %3c %4g").arg(channel3PulseValue.toFixed(3)).arg(channel3PulsePercent.toFixed(1)).arg(channel3CPUTemp).arg(channel3Gain)) : "DISCONNECTED" }
+        QGCLabel { text: channel3Active ? (qsTr("%1 %2% %3c %4g").arg(channel3PulseValue.toFixed(3)).arg(channel3PulsePercent.toFixed(1)).arg(channel3CPUTemp).arg(channel3Gain)) : "DISCONNECTED" }
     }
 
-    Component {
-        id: digitSpinnerComponent
-
-        Rectangle {
-            width:  textMeasureExtraLarge.fontPixelWidth * 1.25
-            height: textMeasureExtraLarge.fontPixelHeight * 2
-            color:  "black"
-
-            property alias value: list.currentIndex
-
-            ListView {
-                id:                         list
-                anchors.fill:               parent
-                highlightRangeMode:         ListView.StrictlyEnforceRange
-                preferredHighlightBegin:    textMeasureExtraLarge.fontPixelHeight * 0.5
-                preferredHighlightEnd:      textMeasureExtraLarge.fontPixelHeight * 0.5
-                clip:                       true
-                spacing:                    -textMeasureDefault.fontPixelHeight * 0.25
-                model:                      [ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 ]
-
-                delegate: Text {
-                    font.pointSize:             textMeasureExtraLarge.font.pointSize
-                    color:                      "white"
-                    text:                       index
-                    anchors.horizontalCenter:   parent.horizontalCenter
-                }
-            }
-
-            Rectangle {
-                anchors.fill: parent
-
-                gradient: Gradient {
-                    GradientStop { position: 0.0; color: "#FF000000" }
-                    GradientStop { position: 0.3; color: "#00000000" }
-                    GradientStop { position: 0.7; color: "#00000000" }
-                    GradientStop { position: 1.0; color: "#FF000000" }
-                }
-            }
-        }
-    }
-
-    /*
     Rectangle {
         id:             freqEditor
         anchors.fill:   parent
+        color:          qgcPal.window
         visible:        false
 
-        Button {
-            anchors.right:  parent.right
-            text:           "Close"
-            onClicked:      freqEditor.visible = false
-        }
+        ColumnLayout {
+            anchors.margins:    _margins
+            anchors.fill:       parent
+            spacing:            ScreenTools.defaultFontPixelHeight
 
-        Row {
-            anchors.centerIn:   parent
-            spacing:            fontPixelWidth / 2
-
-            Loader {
-                id:                     loader1
-                sourceComponent:        digitSpinnerComponent
-                Component.onCompleted:  item.value = freqDigit1
-
-                Connections {
-                    target:         loader1.item
-                    onValueChanged: freqDigit1 = loader1.item.value
-                }
+            FactTextField {
+                Layout.fillWidth:   true
+                fact:               _settings.frequency
             }
 
-            Loader {
-                id:                     loader2
-                sourceComponent:        digitSpinnerComponent
-                Component.onCompleted:  item.value = freqDigit2
-
-                Connections {
-                    target:         loader2.item
-                    onValueChanged: freqDigit2 = loader2.item.value
-                }
-            }
-
-            Loader {
-                id:                     loader3
-                sourceComponent:        digitSpinnerComponent
-                Component.onCompleted:  item.value = freqDigit3
-
-                Connections {
-                    target:         loader3.item
-                    onValueChanged: freqDigit3 = loader3.item.value
-                }
-            }
-
-            Loader {
-                id:                     loader4
-                sourceComponent:        digitSpinnerComponent
-                Component.onCompleted:  item.value = freqDigit4
-
-                Connections {
-                    target:         loader4.item
-                    onValueChanged: freqDigit4 = loader4.item.value
-                }
-            }
-
-            Loader {
-                id:                     loader5
-                sourceComponent:        digitSpinnerComponent
-                Component.onCompleted:  item.value = freqDigit5
-
-                Connections {
-                    target:         loader5.item
-                    onValueChanged: freqDigit5 = loader5.item.value
-                }
-            }
-
-            Loader {
-                id:                     loader6
-                sourceComponent:        digitSpinnerComponent
-                Component.onCompleted:  item.value = freqDigit6
-
-                Connections {
-                    target:         loader6.item
-                    onValueChanged: freqDigit6 = loader6.item.value
-                }
-            }
-
-            Loader {
-                id:                     loader7
-                sourceComponent:        digitSpinnerComponent
-                Component.onCompleted:  item.value = freqDigit7
-
-                Connections {
-                    target:         loader7.item
-                    onValueChanged: freqDigit7 = loader7.item.value
-                }
+            QGCButton {
+                Layout.fillWidth:   true
+                text:               "Close"
+                onClicked:          freqEditor.visible = false
             }
         }
     }
@@ -918,121 +795,29 @@ Rectangle {
     Rectangle {
         id:             gainEditor
         anchors.fill:   parent
+        color:          qgcPal.window
         visible:        false
 
-        CheckBox {
-            id:         autoGainCheckbox
-            text:       "Auto-Gain"
-            checked:    settings.autoGain
-
-            style: CheckBoxStyle {
-                id: checkboxStyle
-                label: Label {
-                    text:           checkboxStyle.control.text
-                    font.pointSize: textMeasureLarge.font.pointSize
-                }
-            }
-
-            onClicked:  settings.autoGain = checked
-        }
-
-        Rectangle {
-            id:                     gainSpinner
-            anchors.verticalCenter: parent.verticalCenter
-            width:                  textMeasureExtraLarge.fontPixelWidth * 2.25
-            height:                 textMeasureExtraLarge.fontPixelHeight * 2
-            color:                  "black"
-            enabled:                !autoGainCheckbox.checked
-
-            property alias value: list.currentIndex
-
-            ListView {
-                id:                         list
-                anchors.fill:               parent
-                highlightRangeMode:         ListView.StrictlyEnforceRange
-                preferredHighlightBegin:    textMeasureExtraLarge.fontPixelHeight * 0.5
-                preferredHighlightEnd:      textMeasureExtraLarge.fontPixelHeight * 0.5
-                clip:                       true
-                spacing:                    -textMeasureDefault.fontPixelHeight * 0.25
-                currentIndex:               gain
-                model:                      [ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21 ]
-
-                delegate: Text {
-                    font.pointSize:             textMeasureExtraLarge.font.pointSize
-                    color:                      "white"
-                    text:                       index
-                    anchors.horizontalCenter:   parent.horizontalCenter
-                }
-
-                onCurrentIndexChanged: {
-                    gain = currentIndex
-                    _pulse.setGain(gain)
-                }
-            }
-
-            Rectangle {
-                anchors.fill: parent
-
-                gradient: Gradient {
-                    GradientStop { position: 0.0; color: "#FF000000" }
-                    GradientStop { position: 0.3; color: "#00000000" }
-                    GradientStop { position: 0.7; color: "#00000000" }
-                    GradientStop { position: 1.0; color: "#FF000000" }
-                }
-            }
-        }
-
-        Button {
-            id:             closeButton
-            anchors.right:  parent.right
-            text:           "Close"
-            onClicked:      gainEditor.visible = false
-        }
-
         ColumnLayout {
-            anchors.left:   gainSpinner.right
-            anchors.right:  parent.right
-            anchors.top:    parent.top
-            anchors.bottom: parent.bottom
+            anchors.margins:    _margins
+            anchors.fill:       parent
+            spacing:            ScreenTools.defaultFontPixelHeight
 
-            RowLayout {
-                Layout.fillWidth: true
-
-                Label {
-                    Layout.preferredWidth: fontPixelWidthLarge * 8
-                    text:   qsTr("Min (%1)").arg(settings.minRawPulse)
-                    font.pointSize:             textMeasureLarge.font.pointSize
-
-                }
-
-                Slider {
-                    minimumValue:       0.01
-                    maximumValue:       0.1
-                    stepSize:           0.01
-                    value:              settings.minRawPulse
-                    Layout.fillWidth:   true
-                    onValueChanged:     settings.minRawPulse = value
-                }
+            FactCheckBox {
+                fact:   _settings.autoGain
+                text:   "Auto-Gain"
             }
 
-            RowLayout {
-                Layout.fillWidth: true
+            FactTextField {
+                Layout.fillWidth:   true
+                fact:               _settings.gain
+            }
 
-                Label {
-                    Layout.preferredWidth: fontPixelWidthLarge * 8
-                    text:   qsTr("Max (%1)").arg(settings.maxRawPulse)
-                    font.pointSize:             textMeasureLarge.font.pointSize
-                }
-
-                Slider {
-                    minimumValue:       1
-                    maximumValue:       40
-                    stepSize:           0.1
-                    value:              settings.maxRawPulse
-                    Layout.fillWidth:   true
-                    onValueChanged:     settings.maxRawPulse = value
-                }
+            QGCButton {
+                Layout.fillWidth:   true
+                text:               "Close"
+                onClicked:          gainEditor.visible = false
             }
         }
-    }*/
+    }
 }

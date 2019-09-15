@@ -5,7 +5,7 @@
 
 #include <QDebug>
 
-//#define REPLAY
+#define REPLAY
 
 QGC_LOGGING_CATEGORY(STETrackerQGCPluginLog, "STETrackerQGCPluginLog")
 

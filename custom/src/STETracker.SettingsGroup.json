@@ -1,31 +1,22 @@
 [
 {
-    "name":             "Altitude",
-    "shortDescription": "Altitude to perform VHF scan",
-    "type":             "double",
-    "units":            "m",
-    "decimalPlaces":    1,
-    "defaultValue":     121.92
+    "name":             "frequency",
+    "shortDescription": "VHF frequency",
+    "type":             "Uint32",
+    "defaultValue":     1460000
 },
 {
-    "name":             "Divisions",
-    "shortDescription": "Number of divisions to stop rotation at",
-    "type":             "Int32",
-    "defaultValue":     16
+    "name":             "gain",
+    "shortDescription": "Signal gain",
+    "type":             "Uint32",
+    "defaultValue":     21,
+    "minValue":         1,
+    "maxnValue":        21
 },
 {
-    "name":             "Frequency",
-    "shortDescription": "Pulse frequency",
-    "type":             "Int32",
-    "min":              146000,
-    "max":              146999,
-    "defaultValue":     146000
-},
-{
-    "name":             "MaxPulse",
-    "shortDescription": "Maximum pulse value",
-    "type":             "Int32",
-    "min":              1,
-    "defaultValue":     19
+    "name":             "autoGain",
+    "shortDescription": "Automatic gain",
+    "type":             "Bool",
+    "defaultValue":     false
 }
 ]
