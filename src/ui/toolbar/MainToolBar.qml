@@ -105,40 +105,12 @@ Rectangle {
             }
 
             QGCToolBarButton {
-                id:                 setupButton
-                anchors.top:        parent.top
-                anchors.bottom:     parent.bottom
-                exclusiveGroup:     mainActionGroup
-                source:             "/qmlimages/Gears.svg"
-                onClicked:          toolBar.showSetupView()
-            }
-
-            QGCToolBarButton {
-                id:                 planButton
-                anchors.top:        parent.top
-                anchors.bottom:     parent.bottom
-                exclusiveGroup:     mainActionGroup
-                source:             "/qmlimages/Plan.svg"
-                onClicked:          toolBar.showPlanView()
-            }
-
-            QGCToolBarButton {
                 id:                 flyButton
                 anchors.top:        parent.top
                 anchors.bottom:     parent.bottom
                 exclusiveGroup:     mainActionGroup
                 source:             "/qmlimages/PaperPlane.svg"
                 onClicked:          toolBar.showFlyView()
-            }
-
-            QGCToolBarButton {
-                id:                 analyzeButton
-                anchors.top:        parent.top
-                anchors.bottom:     parent.bottom
-                exclusiveGroup:     mainActionGroup
-                source:             "/qmlimages/Analyze.svg"
-                visible:            !ScreenTools.isMobile && QGroundControl.corePlugin.showAdvancedUI
-                onClicked:          toolBar.showAnalyzeView()
             }
 
             Rectangle {

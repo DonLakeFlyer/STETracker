@@ -126,45 +126,10 @@ QVariantList &QGCCorePlugin::settingsPages()
             QUrl::fromUserInput("qrc:/qml/GeneralSettings.qml"),
             QUrl::fromUserInput("qrc:/res/gear-white.svg"));
         _p->settingsList.append(QVariant::fromValue(reinterpret_cast<QmlComponentInfo*>(_p->pGeneral)));
-        _p->pCommLinks = new QmlComponentInfo(tr("Comm Links"),
-            QUrl::fromUserInput("qrc:/qml/LinkSettings.qml"),
-            QUrl::fromUserInput("qrc:/res/waves.svg"));
-        _p->settingsList.append(QVariant::fromValue(reinterpret_cast<QmlComponentInfo*>(_p->pCommLinks)));
         _p->pOfflineMaps = new QmlComponentInfo(tr("Offline Maps"),
             QUrl::fromUserInput("qrc:/qml/OfflineMap.qml"),
             QUrl::fromUserInput("qrc:/res/waves.svg"));
         _p->settingsList.append(QVariant::fromValue(reinterpret_cast<QmlComponentInfo*>(_p->pOfflineMaps)));
-#if defined(QGC_GST_TAISYNC_ENABLED)
-        _p->pTaisync = new QmlComponentInfo(tr("Taisync"),
-            QUrl::fromUserInput("qrc:/qml/TaisyncSettings.qml"),
-            QUrl::fromUserInput(""));
-        _p->settingsList.append(QVariant::fromValue(reinterpret_cast<QmlComponentInfo*>(_p->pTaisync)));
-#endif
-#if defined(QGC_AIRMAP_ENABLED)
-        _p->pAirmap = new QmlComponentInfo(tr("AirMap"),
-            QUrl::fromUserInput("qrc:/qml/AirmapSettings.qml"),
-            QUrl::fromUserInput(""));
-        _p->settingsList.append(QVariant::fromValue(reinterpret_cast<QmlComponentInfo*>(_p->pAirmap)));
-#endif
-        _p->pMAVLink = new QmlComponentInfo(tr("MAVLink"),
-            QUrl::fromUserInput("qrc:/qml/MavlinkSettings.qml"),
-            QUrl::fromUserInput("qrc:/res/waves.svg"));
-        _p->settingsList.append(QVariant::fromValue(reinterpret_cast<QmlComponentInfo*>(_p->pMAVLink)));
-        _p->pConsole = new QmlComponentInfo(tr("Console"),
-            QUrl::fromUserInput("qrc:/qml/QGroundControl/Controls/AppMessages.qml"));
-        _p->settingsList.append(QVariant::fromValue(reinterpret_cast<QmlComponentInfo*>(_p->pConsole)));
-        _p->pHelp = new QmlComponentInfo(tr("Help"),
-            QUrl::fromUserInput("qrc:/qml/HelpSettings.qml"));
-        _p->settingsList.append(QVariant::fromValue(reinterpret_cast<QmlComponentInfo*>(_p->pHelp)));
-#if defined(QT_DEBUG)
-        //-- These are always present on Debug builds
-        _p->pMockLink = new QmlComponentInfo(tr("Mock Link"),
-            QUrl::fromUserInput("qrc:/qml/MockLink.qml"));
-        _p->settingsList.append(QVariant::fromValue(reinterpret_cast<QmlComponentInfo*>(_p->pMockLink)));
-        _p->pDebug = new QmlComponentInfo(tr("Debug"),
-            QUrl::fromUserInput("qrc:/qml/DebugWindow.qml"));
-        _p->settingsList.append(QVariant::fromValue(reinterpret_cast<QmlComponentInfo*>(_p->pDebug)));
-#endif
     }
     return _p->settingsList;
 }

@@ -58,16 +58,6 @@ Item {
         }
     }
 
-    QGCLabel {
-        id:                     waitForVehicle
-        anchors.verticalCenter: parent.verticalCenter
-        text:                   qsTr("Waiting For Vehicle Connection")
-        font.pointSize:         ScreenTools.mediumFontPointSize
-        font.family:            ScreenTools.demiboldFontFamily
-        color:                  qgcPal.colorRed
-        visible:                !_activeVehicle
-    }
-
     Row {
         id:             indicatorRow
         anchors.top:    parent.top

@@ -180,7 +180,7 @@ FlightMap {
 
     MapScale {
         id:                     mapScale
-        anchors.right:          parent.right
+        anchors.left:           parent.left
         anchors.margins:        ScreenTools.defaultFontPixelHeight * (0.33)
         anchors.bottom:         parent.bottom
         mapControl:             flightMap
