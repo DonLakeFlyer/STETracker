@@ -112,6 +112,7 @@ public:
 
     // If you override this method, you must call the base class.
     virtual void setToolbox(QGCToolbox* toolbox);
+    virtual void allReady(void) {};
 
 protected:
     QGCApplication* _app;

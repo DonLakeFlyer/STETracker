@@ -107,6 +107,9 @@ void QGCToolbox::setChildToolboxes(void)
 #if defined(QGC_GST_TAISYNC_ENABLED)
     _taisyncManager->setToolbox(this);
 #endif
+
+    _corePlugin->allReady();
+
 }
 
 void QGCToolbox::_scanAndLoadPlugins(QGCApplication* app)

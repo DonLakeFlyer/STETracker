@@ -5,28 +5,20 @@
 
 #include <QDebug>
 
-#define REPLAY
+//#define REPLAY
 
 QGC_LOGGING_CATEGORY(STETrackerQGCPluginLog, "STETrackerQGCPluginLog")
 
 STETrackerQGCPlugin::STETrackerQGCPlugin(QGCApplication *app, QGCToolbox* toolbox)
-    : QGCCorePlugin         (app, toolbox)
-#ifdef REPLAY
-    , _pulse    (false /* captureRawData */)
-#else
-    , _pulse    (true /* captureRawData */)
-#endif
+    : QGCCorePlugin (app, toolbox)
+    , _pulse        (nullptr)
 {
     //_showAdvancedUI = false;
-
-    _udpLink.connect(&_udpLink, &STEUDPLink::pulse,     &_pulse,     &Pulse::pulse);
-    _pulse.connect(&_pulse,     &Pulse::setGainSignal,  &_udpLink,   &STEUDPLink::setGain);
-    _pulse.connect(&_pulse,     &Pulse::setFreqSignal,  &_udpLink,   &STEUDPLink::setFreq);
 }
 
 STETrackerQGCPlugin::~STETrackerQGCPlugin()
 {
-
+    delete _pulse;
 }
 
 void STETrackerQGCPlugin::setToolbox(QGCToolbox* toolbox)
@@ -35,13 +27,22 @@ void STETrackerQGCPlugin::setToolbox(QGCToolbox* toolbox)
 
     _vhfSettings =      new STETrackerSettings(this);
     _vhfQGCOptions =    new STETrackerQGCOptions(this, this);
-
-#ifdef REPLAY
-    _pulse.startReplay();
-#else
-    _pulse.clearFiles();
-#endif
 }
+
+void STETrackerQGCPlugin::allReady(void)
+{
+#ifdef REPLAY
+    _pulse = new Pulse(true /* replay */);
+#else
+    _pulse = new Pulse(false /* replay */);
+#endif
+
+    connect(_pulse, &Pulse::setGainSignal, &_udpLink, &STEUDPLink::setGain);
+    connect(_pulse, &Pulse::setFreqSignal, &_udpLink, &STEUDPLink::setFreq);
+
+    connect(&_udpLink, &STEUDPLink::pulse, _pulse, &Pulse::pulse);
+}
+
 
 QString STETrackerQGCPlugin::brandImageIndoor(void) const
 {

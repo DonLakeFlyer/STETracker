@@ -1,4 +1,8 @@
 #include "Pulse.h"
+#include "QGCApplication.h"
+#include "AppSettings.h"
+#include "SettingsManager.h"
+#include "PositionManager.h"
 
 #include <QDebug>
 #include <QStandardPaths>
@@ -8,15 +12,27 @@
 
 #include <cmath>
 
-Pulse::Pulse(bool captureRawData)
+Pulse::Pulse(bool replay)
     : _replayStream     (nullptr)
-    , _captureRawData   (captureRawData)
-    , _planeHeading     (0)
+    , _replay           (replay)
+    , _posMgr           (qgcApp()->toolbox()->qgcPositionManager())
 {
     _replayTimer.setSingleShot(true);
     _replayTimer.setTimerType(Qt::PreciseTimer);
 
-    connect(&_replayTimer, &QTimer::timeout, this, &Pulse::_readNextPulse);
+    _dataDir.setPath(qgcApp()->toolbox()->settingsManager()->appSettings()->telemetrySavePath());
+
+    if (_replay) {
+        connect(&_replayTimer,  &QTimer::timeout,                           this, &Pulse::_readNextPulse);
+
+        startReplay();
+    } else {
+        connect(this,           &Pulse::pulse,                              this, &Pulse::_rawData);
+        connect(_posMgr,        &QGCPositionManager::gcsPositionChanged,    this, &Pulse::_setPlaneCoordinate);
+        connect(_posMgr,        &QGCPositionManager::gcsHeadingChanged,     this, &Pulse::_setPlaneHeading);
+
+        clearFiles();
+    }
 }
 
 Pulse::~Pulse()
@@ -43,57 +59,55 @@ double Pulse::log10(double value)
 
 void Pulse::clearFiles(void)
 {
-    QDir    writeDir(QStandardPaths::writableLocation(QStandardPaths::DownloadLocation));
-    QFile   file1(writeDir.filePath(QStringLiteral("pulse.csv")));
-    QFile   file2(writeDir.filePath(QStringLiteral("rawData.csv")));
+    QFile   file1(_dataDir.filePath(QStringLiteral("pulse.csv")));
+    QFile   file2(_dataDir.filePath(QStringLiteral("rawData.csv")));
     file1.remove();
     file2.remove();
 }
 
 
-void Pulse::pulseTrajectory(const QGeoCoordinate coord, double travelHeading, double pulseHeading)
+void Pulse::pulseTrajectory(double pulseHeading)
 {
-    if (_captureRawData) {
-        QDir    writeDir(QStandardPaths::writableLocation(QStandardPaths::DownloadLocation));
-        QFile   file(writeDir.filePath(QStringLiteral("pulse.csv")));
+    if (!_replay) {
+        QFile   file(_dataDir.filePath(QStringLiteral("pulse.csv")));
 
-        qDebug() << writeDir;
         if (file.open(QIODevice::WriteOnly | QIODevice::Append | QIODevice::Text)) {
-            file.write((QStringLiteral("%1,%2,%3,%4\n").arg(coord.latitude(),0,'f',6).arg(coord.longitude(),0,'f',6).arg(travelHeading).arg(pulseHeading)).toUtf8().constData());
+            file.write((QStringLiteral("%1,%2,%3,%4,%5\n").arg(QDateTime::currentMSecsSinceEpoch()).arg(planeCoordinate().latitude(),0,'f',6).arg(planeCoordinate().longitude(),0,'f',6).arg(planeHeading()).arg(pulseHeading)).toUtf8().constData());
         } else {
-            qDebug() << "Pulse file open failed" << writeDir << writeDir.exists() << file.fileName() << file.errorString();
+            qDebug() << "Pulse file open failed" << file.fileName() << file.errorString();
         }
         //qDebug() << coord << travelHeading << pulseHeading;
     }
 }
 
-void Pulse::rawData(double lat, double lon, int channel, double pulse)
+void Pulse::_rawData(int channelIndex, float cpuTemp, double pulseValue, int gain)
 {
-    qDebug() << "rawDat" << lat << lon;
-    if (_captureRawData) {
-        QDir    writeDir(QStandardPaths::writableLocation(QStandardPaths::DownloadLocation));
-        QFile   file(writeDir.filePath(QStringLiteral("rawData.csv")));
+    QFile   file(_dataDir.filePath(QStringLiteral("rawData.csv")));
 
-        if (file.open(QIODevice::WriteOnly | QIODevice::Append | QIODevice::Text)) {
-            file.write((QStringLiteral("%1,%2,%3,%4,%5\n").arg(QDateTime::currentMSecsSinceEpoch()).arg(lat).arg(lon).arg(channel).arg(pulse)).toUtf8().constData());
-        } else {
-            qDebug() << "Raw data file open failed" << writeDir << writeDir.exists() << file.fileName() << file.errorString();
+    if (file.open(QIODevice::WriteOnly | QIODevice::Append | QIODevice::Text)) {
+        static bool firstLine = true;
+
+        if (firstLine) {
+            firstLine = false;
+            file.write("Msecs,Lat,Lon,Heading,Channel,Temp,Pulse,Gain\n");
         }
+        file.write((QStringLiteral("%1,%2,%3,%4,%5,%6,%7,%8\n").arg(QDateTime::currentMSecsSinceEpoch()).arg(planeCoordinate().latitude(),0,'f',6).arg(planeCoordinate().longitude(),0,'f',6).arg(planeHeading()).arg(channelIndex).arg(cpuTemp).arg(pulseValue).arg(gain)).toUtf8().constData());
+    } else {
+        qDebug() << "Raw data file open failed" << file.fileName() << file.errorString();
     }
 }
 
 void Pulse::startReplay(void)
 {
-    QDir    writeDir(QStandardPaths::writableLocation(QStandardPaths::DownloadLocation));
-
-    _replayFile.setFileName(writeDir.filePath(QStringLiteral("rawData.csv")));
+    _replayFile.setFileName(_dataDir.filePath(QStringLiteral("rawData.csv")));
 
     if (_replayFile.open(QIODevice::ReadOnly | QIODevice::Text)) {
         _replayStream = new QTextStream(&_replayFile);
+        _nextRawDataLine = _replayStream->readLine();   // Skip over header line
         _nextRawDataLine = _replayStream->readLine();
         _readNextPulse();
     } else {
-        qDebug() << "Replay file open failed" << writeDir << writeDir.exists() << _replayFile.fileName() << _replayFile.errorString();
+        qDebug() << "Replay file open failed" << _replayFile.fileName() << _replayFile.errorString();
     }
 }
 
@@ -103,10 +117,13 @@ void Pulse::_readNextPulse(void)
     //qDebug() << rgParts;
 
     _lastReplayMsecs = rgParts[0].toLong();
-    emit pulse(rgParts[3].toInt(), 0, rgParts[4].toDouble());
 
     _planeCoordinate = QGeoCoordinate(rgParts[1].toDouble(), rgParts[2].toDouble());
     emit planeCoordinateChanged(_planeCoordinate);
+
+    _planeHeading = rgParts[3].toDouble();
+
+    emit pulse(rgParts[4].toInt(), rgParts[5].toDouble(), rgParts[6].toDouble(), rgParts[7].toInt());
 
     if (!_replayStream->atEnd()) {
         _nextRawDataLine = _replayStream->readLine();
@@ -114,4 +131,16 @@ void Pulse::_readNextPulse(void)
         //qDebug() << nextMsecs << _lastReplayMsecs << nextMsecs - _lastReplayMsecs;
         _replayTimer.start(nextMsecs - _lastReplayMsecs);
     }
+}
+
+void Pulse::_setPlaneCoordinate(QGeoCoordinate coordinate)
+{
+    _planeCoordinate = coordinate;
+    emit planeCoordinateChanged(coordinate);
+}
+
+void Pulse::_setPlaneHeading(double heading)
+{
+    _planeHeading = heading;
+    emit planeHeadingChanged(heading);
 }

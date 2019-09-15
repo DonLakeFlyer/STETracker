@@ -172,8 +172,6 @@ Rectangle {
     }
 
     function _handlePulse(channelIndex, cpuTemp, pulseValue, gain) {
-        _pulse.rawData(gpsPosition.position.coordinate.latitude, gpsPosition.position.coordinate.longitude, channelIndex, pulseValue)
-
         var pulsePercent
         if (pulseValue == 0) {
             pulsePercent = 0
@@ -510,24 +508,10 @@ Rectangle {
             }
 
             var filteredHeading = (heading * 0.9) + (rotationAdjustedNewHeading * 0.1)
-            console.log("tick", heading, newHeading, rotationAdjustedNewHeading, filteredHeading)
+            //console.log("tick", heading, newHeading, rotationAdjustedNewHeading, filteredHeading)
             filteredHeading = _normalizeHeading(filteredHeading)
             heading = filteredHeading
-            if (gpsPosition.position.latitudeValid && gpsPosition.position.longitudeValid) {
-                _pulse.pulseTrajectory(gpsPosition.position.coordinate, gpsPosition.position.direction, heading)
-            }
-        }
-    }
-
-    PositionSource {
-        id:                             gpsPosition
-        active:                         true
-        updateInterval:                 500
-        preferredPositioningMethods:    PositionSource.SatellitePositioningMethods
-
-        onPositionChanged: {
-            var coord = gpsPosition.position.coordinate;
-            console.log("Coordinate:", coord.longitude, coord.latitude);
+            _pulse.pulseTrajectory(heading)
         }
     }
 
@@ -573,54 +557,9 @@ Rectangle {
         ctx.stroke()
     }
 
-    /*Column {
-        anchors.left:   parent.left
-        anchors.right:  headingIndicator.left
-
-        Text {
-            anchors.left:   parent.left
-            anchors.right:  parent.right
-            text:           settings.frequency
-            font.pointSize: 100
-            fontSizeMode:   Text.HorizontalFit
-
-            MouseArea {
-                anchors.fill:   parent
-                onClicked:      freqEditor.visible = true
-            }
-        }
-
-        Text {
-            anchors.left:       parent.left
-            anchors.right:      parent.right
-            text:               "Zoom " + zoomFactor
-            font.pointSize:     100
-            fontSizeMode:       Text.HorizontalFit
-
-            MouseArea {
-                anchors.fill:   parent
-                onClicked:      gainEditor.visible = true
-            }
-        }
-
-        Text {
-            anchors.left:       parent.left
-            anchors.right:      parent.right
-            text:               (settings.autoGain ? "Auto" : "Manual") + " Gain " + gain
-            font.pointSize:     100
-            fontSizeMode:       Text.HorizontalFit
-
-            MouseArea {
-                anchors.fill:   parent
-                onClicked:      gainEditor.visible = true
-            }
-        }
-    }*/
-
     Rectangle {
         id:                 headingIndicator
         anchors.margins:    fontPixelWidth
-        anchors.top:        parent.top
         anchors.left:       parent.left
         anchors.right:      parent.right
         height:             width
@@ -679,7 +618,7 @@ Rectangle {
         // Fitered heading indicator
         Image {
             id:                     fiteredHeadingIndicator
-            source:                 "qrc:/attitudePointer.svg"
+            source:                 "/qmlimages/attitudePointer.svg"
             mipmap:                 true
             fillMode:               Image.PreserveAspectFit
             anchors.leftMargin:     _pointerMargin
@@ -702,7 +641,7 @@ Rectangle {
         // Raw heading indicator
         Image {
             id:                     rawHeadingIndicator
-            source:                 "qrc:/attitudePointer.svg"
+            source:                 "/qmlimages/attitudePointer.svg"
             mipmap:                 true
             fillMode:               Image.PreserveAspectFit
             anchors.leftMargin:     _pointerMargin
@@ -724,10 +663,56 @@ Rectangle {
         }
     }
 
+    Column {
+        anchors.margins:    fontPixelWidth
+        anchors.top:        headingIndicator.bottom
+        anchors.left:       parent.left
+        anchors.right:      parent.right
+
+        Text {
+            anchors.left:   parent.left
+            anchors.right:  parent.right
+            text:           settings.frequency
+            font.pointSize: 100
+            fontSizeMode:   Text.HorizontalFit
+
+            MouseArea {
+                anchors.fill:   parent
+                onClicked:      freqEditor.visible = true
+            }
+        }
+
+        Text {
+            anchors.left:       parent.left
+            anchors.right:      parent.right
+            text:               "Zoom " + zoomFactor
+            font.pointSize:     100
+            fontSizeMode:       Text.HorizontalFit
+
+            MouseArea {
+                anchors.fill:   parent
+                onClicked:      gainEditor.visible = true
+            }
+        }
+
+        Text {
+            anchors.left:       parent.left
+            anchors.right:      parent.right
+            text:               (settings.autoGain ? "Auto" : "Manual") + " Gain " + gain
+            font.pointSize:     100
+            fontSizeMode:       Text.HorizontalFit
+
+            MouseArea {
+                anchors.fill:   parent
+                onClicked:      gainEditor.visible = true
+            }
+        }
+    }
+
     GridLayout {
-        anchors.left:   parent.left
-        anchors.bottom: parent.bottom
-        columns:        2
+        anchors.margins:    fontPixelWidth
+        anchors.bottom:     parent.bottom
+        columns:            2
 
         Rectangle {
             id:     channel0Background
@@ -835,6 +820,7 @@ Rectangle {
         }
     }
 
+    /*
     Rectangle {
         id:             freqEditor
         anchors.fill:   parent
@@ -1048,5 +1034,5 @@ Rectangle {
                 }
             }
         }
-    }
+    }*/
 }

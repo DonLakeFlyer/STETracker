@@ -25,9 +25,7 @@ public:
     ~STETrackerQGCPlugin();
 
     Q_PROPERTY(STETrackerSettings*  vhfSettings MEMBER _vhfSettings CONSTANT)
-    Q_PROPERTY(Pulse*               pulse       READ pulse          CONSTANT)
-
-    Pulse* pulse(void) { return &_pulse; }
+    Q_PROPERTY(Pulse*               pulse       MEMBER _pulse       CONSTANT)
 
     // Overrides from QGCCorePlugin
     QString             brandImageIndoor        (void) const final;
@@ -36,7 +34,8 @@ public:
     QGCOptions*         options                 (void) final { return qobject_cast<QGCOptions*>(_vhfQGCOptions); }
 
     // Overrides from QGCTool
-    void setToolbox     (QGCToolbox* toolbox) final;
+    void setToolbox (QGCToolbox* toolbox) final;
+    void allReady   (void) final;
 
 signals:
 
@@ -48,5 +47,5 @@ private:
     STETrackerQGCOptions*   _vhfQGCOptions;
     STETrackerSettings*     _vhfSettings;
     STEUDPLink              _udpLink;
-    Pulse                   _pulse;
+    Pulse*                  _pulse;
 };

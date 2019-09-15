@@ -32,15 +32,8 @@ FlightMap {
     allowVehicleLocationCenter: !_keepVehicleCentered
     planView:                   false
 
-    property alias  scaleState: mapScale.state
-
     // The following properties must be set by the consumer
-    property var    planMasterController
-    property var    guidedActionsController
-    property var    flightWidgets
-    property var    rightPanelWidth
     property var    qgcView                             ///< QGCView control which contains this map
-    property var    multiVehicleView                    ///< true: multi-vehicle view, false: single vehicle view
 
     property rect   centerViewport:             Qt.rect(0, 0, width, height)
 
@@ -49,7 +42,7 @@ FlightMap {
     property real   _toolButtonTopMargin:       parent.height - ScreenTools.availableHeight + (ScreenTools.defaultFontPixelHeight / 2)
 
     property bool   _disableVehicleTracking:    false
-    property bool   _keepVehicleCentered:       _mainIsMap ? false : true
+    property bool   _keepVehicleCentered:       false
 
 
     property var    _pulse:             QGroundControl.corePlugin.pulse
@@ -150,19 +143,6 @@ FlightMap {
     QGCPalette { id: qgcPal; colorGroupEnabled: true }
     QGCMapPalette { id: mapPal; lightColors: isSatelliteMap }
 
-    // Add the vehicles to the map
-    MapItemView {
-        model: QGroundControl.multiVehicleManager.vehicles
-
-        delegate: VehicleMapItem {
-            vehicle:        object
-            coordinate:     object.coordinate
-            map:            flightMap
-            size:           _mainIsMap ? ScreenTools.defaultFontPixelHeight * 3 : ScreenTools.defaultFontPixelHeight
-            z:              QGroundControl.zOrderVehicles
-        }
-    }
-
     MapQuickItem {
         anchorPoint.x:  vehicleItem.width  / 2
         anchorPoint.y:  vehicleItem.height / 2
@@ -202,28 +182,7 @@ FlightMap {
         id:                     mapScale
         anchors.right:          parent.right
         anchors.margins:        ScreenTools.defaultFontPixelHeight * (0.33)
-        anchors.topMargin:      ScreenTools.defaultFontPixelHeight * (0.33) + state === "bottomMode" ? 0 : ScreenTools.toolbarHeight
-        anchors.bottomMargin:   ScreenTools.defaultFontPixelHeight * (0.33)
+        anchors.bottom:         parent.bottom
         mapControl:             flightMap
-        visible:                !ScreenTools.isTinyScreen
-        state:                  "bottomMode"
-        states: [
-            State {
-                name:   "topMode"
-                AnchorChanges {
-                    target:                 mapScale
-                    anchors.top:            parent.top
-                    anchors.bottom:         undefined
-                }
-            },
-            State {
-                name:   "bottomMode"
-                AnchorChanges {
-                    target:                 mapScale
-                    anchors.top:            undefined
-                    anchors.bottom:         parent.bottom
-                }
-            }
-        ]
     }
 }
