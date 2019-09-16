@@ -61,6 +61,6 @@ private:
     bool                    _connectState;
     QList<UDPCLient*>       _sessionTargets;
     QList<QHostAddress>     _localAddresses;
-
+    QList<int>              _rgExpectedIndex;
 };
 

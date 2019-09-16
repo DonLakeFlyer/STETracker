@@ -32,6 +32,8 @@ STEUDPLink::STEUDPLink(void)
     }
     moveToThread(this);
     _connect();
+
+    _rgExpectedIndex << 0 << 0 << 0 << 0;
 }
 
 STEUDPLink::~STEUDPLink()
@@ -120,14 +122,16 @@ void STEUDPLink::_readBytes()
         _socket->readDatagram(datagram.data(), datagram.size(), &sender, &senderPort);
 
         // Format should be
+        //  int -   send index
         //  int -   channel index
         //  float - pulse value
         //  float - cpu temp
         //  int -   freq
         //  int -   gain
-        int expectedSize = (sizeof(int) * 3) + (sizeof(float) * 2);
+        int expectedSize = (sizeof(int) * 4) + (sizeof(float) * 2);
         if (datagram.size() == expectedSize) {
             struct PulseInfo_s {
+                int     sendIndex;
                 int     channelIndex;
                 float   pulseValue;
                 float   cpuTemp;
@@ -135,6 +139,12 @@ void STEUDPLink::_readBytes()
                 int     gain;
             };
             const struct PulseInfo_s* pulseInfo = (const struct PulseInfo_s*)datagram.constData();
+
+            if (pulseInfo->sendIndex != _rgExpectedIndex[pulseInfo->channelIndex]) {
+                qWarning() << "Lost packet channel:expected:actual" << pulseInfo->channelIndex << _rgExpectedIndex[pulseInfo->channelIndex] << pulseInfo->sendIndex;
+            }
+            _rgExpectedIndex[pulseInfo->channelIndex] = pulseInfo->sendIndex + 1;
+
             //qDebug() << "Pulse" << pulseInfo->channelIndex << pulseInfo->cpuTemp << pulseInfo->pulseValue << pulseInfo->freq;
             emit pulse(pulseInfo->channelIndex, pulseInfo->cpuTemp, pulseInfo->pulseValue, pulseInfo->gain);
         } else {
