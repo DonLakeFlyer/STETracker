@@ -46,6 +46,6 @@ private:
     QVariantList            _settingsPages;
     STETrackerQGCOptions*   _vhfQGCOptions;
     STETrackerSettings*     _vhfSettings;
-    STEUDPLink              _udpLink;
+    STEUDPLink*             _udpLink;
     Pulse*                  _pulse;
 };

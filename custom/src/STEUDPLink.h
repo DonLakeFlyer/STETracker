@@ -11,6 +11,7 @@
 #include <QThread>
 
 #include "STETCPLink.h"
+#include "Pulse.h"
 
 class UDPCLient {
 public:
@@ -31,7 +32,7 @@ class STEUDPLink : public QThread
     Q_OBJECT
 
 public:
-    STEUDPLink(void);
+    STEUDPLink(Pulse* pulse);
     ~STEUDPLink();
 
     bool    isConnected             () const;
@@ -58,6 +59,7 @@ private:
     bool    _hardwareConnect        ();
     void    _writeDataGram          (const QByteArray data, const UDPCLient* target);
 
+    Pulse*                  _pulse;
     bool                    _running;
     QUdpSocket*             _socket;
     bool                    _connectState;

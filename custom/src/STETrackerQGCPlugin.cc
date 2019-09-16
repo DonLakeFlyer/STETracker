@@ -11,6 +11,7 @@ QGC_LOGGING_CATEGORY(STETrackerQGCPluginLog, "STETrackerQGCPluginLog")
 
 STETrackerQGCPlugin::STETrackerQGCPlugin(QGCApplication *app, QGCToolbox* toolbox)
     : QGCCorePlugin (app, toolbox)
+    , _udpLink      (nullptr)
     , _pulse        (nullptr)
 {
     //_showAdvancedUI = false;
@@ -18,6 +19,7 @@ STETrackerQGCPlugin::STETrackerQGCPlugin(QGCApplication *app, QGCToolbox* toolbo
 
 STETrackerQGCPlugin::~STETrackerQGCPlugin()
 {
+    delete _udpLink;
     delete _pulse;
 }
 
@@ -37,10 +39,7 @@ void STETrackerQGCPlugin::allReady(void)
     _pulse = new Pulse(false /* replay */);
 #endif
 
-    connect(_pulse, &Pulse::setGainSignal, &_udpLink, &STEUDPLink::setGain);
-    connect(_pulse, &Pulse::setFreqSignal, &_udpLink, &STEUDPLink::setFreq);
-
-    connect(&_udpLink, &STEUDPLink::pulse, _pulse, &Pulse::pulse);
+    _udpLink = new STEUDPLink(_pulse);
 }
 
 

@@ -22,11 +22,14 @@ static bool contains_target(const QList<UDPCLient*> list, const QHostAddress& ad
     return false;
 }
 
-STEUDPLink::STEUDPLink(void)
-    : _running      (false)
+STEUDPLink::STEUDPLink(Pulse* pulse)
+    : _pulse        (pulse)
+    , _running      (false)
     , _socket       (Q_NULLPTR)
     , _connectState (false)
 {
+    connect(this, &STEUDPLink::pulse, _pulse, &Pulse::pulse);
+
     for (const QHostAddress &address: QNetworkInterface::allAddresses()) {
         _localAddresses.append(QHostAddress(address));
     }
@@ -160,7 +163,12 @@ void STEUDPLink::_readBytes()
             qDebug() << "Adding target" << asender << senderPort;
 
             // This is a new connection. Crank up the TCP connection for it.
-            _rgTCPLinks.append(new STETCPLink(asender.toString(), 5007));
+
+            STETCPLink* tcpLink = new STETCPLink(asender.toString(), 50000);
+            //connect(_pulse, &Pulse::setGainSignal, &_udpLink, &STEUDPLink::setGain);
+            //connect(_pulse, &Pulse::setFreqSignal, &_udpLink, &STEUDPLink::setFreq);
+            connect(tcpLink, &STETCPLink::pulse, _pulse, &Pulse::pulse);
+            _rgTCPLinks.append(new STETCPLink(asender.toString(), 50000));
 
             UDPCLient* target = new UDPCLient(asender, senderPort);
             _sessionTargets.append(target);
