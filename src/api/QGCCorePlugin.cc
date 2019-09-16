@@ -130,6 +130,9 @@ QVariantList &QGCCorePlugin::settingsPages()
             QUrl::fromUserInput("qrc:/qml/OfflineMap.qml"),
             QUrl::fromUserInput("qrc:/res/waves.svg"));
         _p->settingsList.append(QVariant::fromValue(reinterpret_cast<QmlComponentInfo*>(_p->pOfflineMaps)));
+        _p->pConsole = new QmlComponentInfo(tr("Console"),
+            QUrl::fromUserInput("qrc:/qml/QGroundControl/Controls/AppMessages.qml"));
+        _p->settingsList.append(QVariant::fromValue(reinterpret_cast<QmlComponentInfo*>(_p->pConsole)));
     }
     return _p->settingsList;
 }
