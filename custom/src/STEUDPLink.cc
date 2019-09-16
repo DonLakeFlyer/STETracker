@@ -155,8 +155,13 @@ void STEUDPLink::_readBytes()
         if (_isIpLocal(sender)) {
             asender = QHostAddress(QString("127.0.0.1"));
         }
+
         if (!contains_target(_sessionTargets, asender, senderPort)) {
             qDebug() << "Adding target" << asender << senderPort;
+
+            // This is a new connection. Crank up the TCP connection for it.
+            _rgTCPLinks.append(new STETCPLink(asender.toString(), 5007));
+
             UDPCLient* target = new UDPCLient(asender, senderPort);
             _sessionTargets.append(target);
         }

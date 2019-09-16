@@ -29,6 +29,7 @@ HEADERS += \
     $$PWD/src/STETrackerQGCPlugin.h \
     $$PWD/src/STETrackerSettings.h \
     $$PWD/src/STEUDPLink.h \
+    $$PWD/src/STETCPLink.h \
     $$PWD/src/Pulse.h \
 
 SOURCES += \
@@ -38,4 +39,5 @@ SOURCES += \
     $$PWD/src/STETrackerQGCPlugin.cc \
     $$PWD/src/STETrackerSettings.cc \
     $$PWD/src/STEUDPLink.cc \
+    $$PWD/src/STETCPLink.cc \
     $$PWD/src/Pulse.cc \

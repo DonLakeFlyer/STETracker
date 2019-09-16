@@ -10,6 +10,8 @@
 #include <QByteArray>
 #include <QThread>
 
+#include "STETCPLink.h"
+
 class UDPCLient {
 public:
     UDPCLient(const QHostAddress& address_, quint16 port_)
@@ -62,5 +64,6 @@ private:
     QList<UDPCLient*>       _sessionTargets;
     QList<QHostAddress>     _localAddresses;
     QList<int>              _rgExpectedIndex;
+    QList<STETCPLink*>      _rgTCPLinks;
 };
 
