@@ -55,6 +55,7 @@ public slots:
 
 protected slots:
     void _socketError(QAbstractSocket::SocketError socketError);
+    void _stateChanged(QAbstractSocket::SocketState socketState);
 
     // From LinkInterface
     virtual void readBytes(void);

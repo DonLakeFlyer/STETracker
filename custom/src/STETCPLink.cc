@@ -151,8 +151,8 @@ bool STETCPLink::_hardwareConnect()
     _socket->connectToHost(_hostName, _port);
     QObject::connect(_socket, &QTcpSocket::readyRead, this, &STETCPLink::readBytes);
 
-    QObject::connect(_socket,static_cast<void (QTcpSocket::*)(QAbstractSocket::SocketError)>(&QTcpSocket::error),
-                     this, &STETCPLink::_socketError);
+    QObject::connect(_socket, static_cast<void (QTcpSocket::*)(QAbstractSocket::SocketError)>(&QTcpSocket::error),          this, &STETCPLink::_socketError);
+    QObject::connect(_socket, static_cast<void (QTcpSocket::*)(QAbstractSocket::SocketState)>(&QTcpSocket::stateChanged),   this, &STETCPLink::_stateChanged);
 
     // Give the socket a second to connect to the other side otherwise error out
     if (!_socket->waitForConnected(1000))
@@ -175,6 +175,12 @@ void STETCPLink::_socketError(QAbstractSocket::SocketError socketError)
     Q_UNUSED(socketError);
     qWarning() << "TCP socket error host:Error" << _hostName << _port << _socket->errorString();
 }
+
+void STETCPLink::_stateChanged(QAbstractSocket::SocketState socketState)
+{
+    qDebug() << "TCP socket state change" << socketState;
+}
+
 
 void STETCPLink::waitForBytesWritten(int msecs)
 {

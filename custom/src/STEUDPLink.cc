@@ -7,6 +7,7 @@
 #include <QNetworkInterface>
 #include <iostream>
 #include <QHostInfo>
+#include <QDateTime>
 
 #include "STEUDPLink.h"
 
@@ -159,8 +160,14 @@ void STEUDPLink::_readBytes()
             asender = QHostAddress(QString("127.0.0.1"));
         }
 
-        if (!contains_target(_sessionTargets, asender, senderPort)) {
-            qDebug() << "Adding target" << asender << senderPort;
+        // Something goes wrong with a connection if we connect too fast, so we stagger then out
+        static int lastTime = 0;
+        int currentTime = QDateTime::currentSecsSinceEpoch();
+
+        if (!contains_target(_sessionTargets, asender, senderPort) && currentTime - lastTime > 5) {
+            lastTime = currentTime;
+            qDebug() << "UDP connected" << asender << senderPort;
+            qDebug() << "TCP connecting to" << asender << 50000;
 
             // This is a new connection. Crank up the TCP connection for it.
 
