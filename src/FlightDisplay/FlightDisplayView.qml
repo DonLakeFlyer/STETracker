@@ -48,11 +48,11 @@ QGCView {
         anchors.fill:   parent
 
         FlightDisplayViewMap {
-            id:                         _flightMap
-            anchors.fill:               parent
-            qgcView:                    root
+            id:                     _flightMap
+            anchors.rightMargin:    parent.width / 4
+            anchors.fill:           parent
+            qgcView:                root
         }
-
 
         //-------------------------------------------------------------------------
         //-- Loader helper for plugins to overlay elements over the fly view

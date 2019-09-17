@@ -120,6 +120,7 @@ void STEUDPLink::_readBytes()
         QByteArray      datagram;
         QHostAddress    sender;
         quint16         senderPort;
+        int             channelIndex;
 
         datagram.resize(static_cast<int>(_socket->pendingDatagramSize()));
 
@@ -144,15 +145,21 @@ void STEUDPLink::_readBytes()
             };
             const struct PulseInfo_s* pulseInfo = (const struct PulseInfo_s*)datagram.constData();
 
+            channelIndex = pulseInfo->channelIndex;
+            if (pulseInfo->sendIndex == _rgExpectedIndex[pulseInfo->channelIndex] - 1) {
+                qDebug() << "Multi-send";
+                return;
+            }
             if (pulseInfo->sendIndex != _rgExpectedIndex[pulseInfo->channelIndex]) {
                 qWarning() << "Lost packet channel:expected:actual" << pulseInfo->channelIndex << _rgExpectedIndex[pulseInfo->channelIndex] << pulseInfo->sendIndex;
             }
             _rgExpectedIndex[pulseInfo->channelIndex] = pulseInfo->sendIndex + 1;
 
             //qDebug() << "Pulse" << pulseInfo->channelIndex << pulseInfo->cpuTemp << pulseInfo->pulseValue << pulseInfo->freq;
-            emit pulse(pulseInfo->channelIndex, pulseInfo->cpuTemp, pulseInfo->pulseValue, pulseInfo->gain);
+            emit pulse(false, pulseInfo->channelIndex, pulseInfo->cpuTemp, pulseInfo->pulseValue, pulseInfo->gain);
         } else {
             qWarning() << "Bad datagram size actual:expected" << datagram.size() << expectedSize;
+            return;
         }
 
         QHostAddress asender = sender;
@@ -166,8 +173,9 @@ void STEUDPLink::_readBytes()
 
         if (!contains_target(_sessionTargets, asender, senderPort) && currentTime - lastTime > 5) {
             lastTime = currentTime;
-            qDebug() << "UDP connected" << asender << senderPort;
-            qDebug() << "TCP connecting to" << asender << 50000;
+            qDebug() << "UDP connected" << channelIndex << asender << senderPort;
+#if 0
+            qDebug() << "TCP connecting to" << channelIndex << asender << 50000;
 
             // This is a new connection. Crank up the TCP connection for it.
 
@@ -176,6 +184,7 @@ void STEUDPLink::_readBytes()
             //connect(_pulse, &Pulse::setFreqSignal, &_udpLink, &STEUDPLink::setFreq);
             connect(tcpLink, &STETCPLink::pulse, _pulse, &Pulse::pulse);
             _rgTCPLinks.append(new STETCPLink(asender.toString(), 50000));
+#endif
 
             UDPCLient* target = new UDPCLient(asender, senderPort);
             _sessionTargets.append(target);

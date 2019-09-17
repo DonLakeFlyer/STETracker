@@ -164,7 +164,17 @@ Rectangle {
         return heading
     }
 
-    function _handlePulse(channelIndex, cpuTemp, pulseValue, gain) {
+    // We don't upate the heading on every pulse. We wait for the possible group of 4.
+    Timer {
+        id:             delayedHeadingUpdateTimer
+        interval:       50
+        repeat:         false
+        running:        false
+        onTriggered:    updateHeading()
+    }
+
+    function _handlePulse(tcpLink, channelIndex, cpuTemp, pulseValue, gain) {
+        console.log(tcpLink ? "TCP Link" : "UDP Link", channelIndex)
         var pulsePercent
         if (pulseValue == 0) {
             pulsePercent = 0
@@ -216,7 +226,8 @@ Rectangle {
                 sendFreqChange()
             }
         }
-        updateHeading()
+
+        delayedHeadingUpdateTimer.restart()
 
         // Update zoom factor
         var maxChannelPulseValue = Math.max(channel0PulseValue, Math.max(channel1PulseValue, Math.max(channel2PulseValue, channel3PulseValue)))
@@ -308,7 +319,7 @@ Rectangle {
 
     Connections {
         target:     _pulse
-        onPulse:    _handlePulse(channelIndex, cpuTemp, pulseValue, gain)
+        onPulse:    _handlePulse(tcpLink, channelIndex, cpuTemp, pulseValue, gain)
     }
 
     // Drift range testing

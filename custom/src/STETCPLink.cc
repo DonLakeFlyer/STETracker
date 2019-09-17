@@ -27,6 +27,7 @@ STETCPLink::STETCPLink(const QString &hostName, quint16 port)
     , _hostName         (hostName)
     , _port             (port)
     , _socketIsConnected(false)
+    , _restartTimer     (nullptr)
 {
     _rgExpectedIndex << 0 << 0 << 0 << 0;
 
@@ -45,6 +46,12 @@ STETCPLink::~STETCPLink()
 
 void STETCPLink::run()
 {
+    _restartTimer = new QTimer(this);
+    _restartTimer->setInterval   (3000);
+    _restartTimer->setSingleShot (true);
+    connect(_restartTimer, &QTimer::timeout, this, &STETCPLink::_restart);
+
+
     _hardwareConnect();
     exec();
 }
@@ -100,10 +107,12 @@ void STETCPLink::readBytes()
             _rgExpectedIndex[pulseInfo->channelIndex] = pulseInfo->sendIndex + 1;
 
             //qDebug() << "Pulse" << pulseInfo->channelIndex << pulseInfo->cpuTemp << pulseInfo->pulseValue << pulseInfo->freq;
-            emit pulse(pulseInfo->channelIndex, pulseInfo->cpuTemp, pulseInfo->pulseValue, pulseInfo->gain);
+            emit pulse(true, pulseInfo->channelIndex, pulseInfo->cpuTemp, pulseInfo->pulseValue, pulseInfo->gain);
         } else {
             qWarning() << "Bad datagram size actual:expected" << buffer.size() << expectedSize;
         }
+
+        //_restartTimer->start();
     }
 }
 
@@ -167,6 +176,9 @@ bool STETCPLink::_hardwareConnect()
         return false;
     }
     _socketIsConnected = true;
+
+    _socket->setSocketOption(QAbstractSocket::KeepAliveOption, 1);
+
     return true;
 }
 
@@ -174,6 +186,7 @@ void STETCPLink::_socketError(QAbstractSocket::SocketError socketError)
 {
     Q_UNUSED(socketError);
     qWarning() << "TCP socket error host:Error" << _hostName << _port << _socket->errorString();
+    _restart();
 }
 
 void STETCPLink::_stateChanged(QAbstractSocket::SocketState socketState)
@@ -192,4 +205,11 @@ void STETCPLink::waitForReadyRead(int msecs)
 {
     Q_ASSERT(_socket);
     _socket->waitForReadyRead(msecs);
+}
+
+void STETCPLink::_restart(void)
+{
+    qDebug() << "Restarting TCP link" << _hostName;
+    _disconnect();
+    _hardwareConnect();
 }

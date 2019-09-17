@@ -80,8 +80,10 @@ void Pulse::pulseTrajectory(double pulseHeading)
     }
 }
 
-void Pulse::_rawData(int channelIndex, float cpuTemp, double pulseValue, int gain)
+void Pulse::_rawData(bool tcpLink, int channelIndex, float cpuTemp, double pulseValue, int gain)
 {
+    Q_UNUSED(tcpLink);
+
     QFile   file(_dataDir.filePath(QStringLiteral("rawData.csv")));
 
     if (file.open(QIODevice::WriteOnly | QIODevice::Append | QIODevice::Text)) {
@@ -123,7 +125,7 @@ void Pulse::_readNextPulse(void)
 
     _planeHeading = rgParts[3].toDouble();
 
-    emit pulse(rgParts[4].toInt(), rgParts[5].toDouble(), rgParts[6].toDouble(), rgParts[7].toInt());
+    emit pulse(true, rgParts[4].toInt(), rgParts[5].toDouble(), rgParts[6].toDouble(), rgParts[7].toInt());
 
     if (!_replayStream->atEnd()) {
         _nextRawDataLine = _replayStream->readLine();

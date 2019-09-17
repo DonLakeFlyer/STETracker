@@ -32,7 +32,7 @@ public:
     double          planeHeading    (void) const { return _posMgr->gcsHeading(); }
 
 signals:
-    void pulse                  (int channelIndex, float cpuTemp, double pulseValue, int gain);
+    void pulse                  (bool tcpLink, int channelIndex, float cpuTemp, double pulseValue, int gain);
     void setGainSignal          (int gain);
     void setFreqSignal          (int freq);
     void planeCoordinateChanged (QGeoCoordinate currentLocation);
@@ -40,7 +40,7 @@ signals:
 
 private slots:
     void _readNextPulse         (void);
-    void _rawData               (int channelIndex, float cpuTemp, double pulseValue, int gain);
+    void _rawData               (bool tcpLink, int channelIndex, float cpuTemp, double pulseValue, int gain);
     void _setPlaneCoordinate    (QGeoCoordinate coordinate);
     void _setPlaneHeading       (double heading);
 

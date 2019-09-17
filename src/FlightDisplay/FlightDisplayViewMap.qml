@@ -29,7 +29,7 @@ FlightMap {
     anchors.fill:               parent
     mapName:                    _mapName
     allowGCSLocationCenter:     !userPanned
-    allowVehicleLocationCenter: !_keepVehicleCentered
+    allowVehicleLocationCenter: true
     planView:                   false
 
     // The following properties must be set by the consumer
@@ -38,11 +38,9 @@ FlightMap {
     property rect   centerViewport:             Qt.rect(0, 0, width, height)
 
     property var    _activeVehicle:             QGroundControl.multiVehicleManager.offlineEditingVehicle
-    property var    _activeVehicleCoordinate:   _activeVehicle ? _activeVehicle.coordinate : QtPositioning.coordinate()
     property real   _toolButtonTopMargin:       parent.height - ScreenTools.availableHeight + (ScreenTools.defaultFontPixelHeight / 2)
 
     property bool   _disableVehicleTracking:    false
-    property bool   _keepVehicleCentered:       false
 
 
     property var    _pulse:             QGroundControl.corePlugin.pulse
@@ -98,26 +96,15 @@ FlightMap {
     }
 
     function recenterNeeded() {
-        var vehiclePoint = flightMap.fromCoordinate(_activeVehicleCoordinate, false /* clipToViewport */)
-        var toolStripRightEdge = mapFromItem(toolStrip, toolStrip.x, 0).x + toolStrip.width
-        var instrumentsWidth = 0
-        if (QGroundControl.corePlugin.options.instrumentWidget && QGroundControl.corePlugin.options.instrumentWidget.widgetPosition === CustomInstrumentWidget.POS_TOP_RIGHT) {
-            // Assume standard instruments
-            instrumentsWidth = flightDisplayViewWidgets.getPreferredInstrumentWidth()
-        }
-        var centerViewport = Qt.rect(toolStripRightEdge, 0, width - toolStripRightEdge - instrumentsWidth, height)
+        var vehiclePoint = flightMap.fromCoordinate(_planeCoordinate, false /* clipToViewport */)
+        var centerViewport = Qt.rect(0, 0, width - (width /4), height)
         return !pointInRect(vehiclePoint, centerViewport)
     }
 
     function updateMapToVehiclePosition() {
-        // We let FlightMap handle first vehicle position
-        if (firstVehiclePositionReceived && _activeVehicleCoordinate.isValid && !_disableVehicleTracking) {
-            if (_keepVehicleCentered) {
-                flightMap.center = _activeVehicleCoordinate
-            } else {
-                if (firstVehiclePositionReceived && recenterNeeded()) {
-                    animatedMapRecenter(flightMap.center, _activeVehicleCoordinate)
-                }
+        if (_planeCoordinate.isValid && !_disableVehicleTracking) {
+            if (recenterNeeded()) {
+                animatedMapRecenter(flightMap.center, _planeCoordinate)
             }
         }
     }

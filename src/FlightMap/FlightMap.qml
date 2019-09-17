@@ -126,27 +126,4 @@ Map {
         target:             QGroundControl.settingsManager.flightMapSettings.mapProvider
         onRawValueChanged:  updateActiveMapType()
     }
-
-    /// Ground Station location
-    MapQuickItem {
-        anchorPoint.x:  sourceItem.width / 2
-        anchorPoint.y:  sourceItem.height / 2
-        visible:        gcsPosition.isValid
-        coordinate:     gcsPosition
-
-        sourceItem: Image {
-            id:             mapItemImage
-            source:         isNaN(gcsHeading) ? "/res/QGCLogoFull" : "/res/QGCLogoArrow"
-            mipmap:         true
-            antialiasing:   true
-            fillMode:       Image.PreserveAspectFit
-            height:         ScreenTools.defaultFontPixelHeight * (isNaN(gcsHeading) ? 1.75 : 2.5 )
-            sourceSize.height: height
-            transform: Rotation {
-                origin.x:       mapItemImage.width  / 2
-                origin.y:       mapItemImage.height / 2
-                angle:          isNaN(gcsHeading) ? 0 : gcsHeading
-            }
-        }
-    }
 } // Map
