@@ -562,126 +562,127 @@ Rectangle {
         ctx.stroke()
     }
 
-    Rectangle {
-        id:                 headingIndicator
-        anchors.margins:    _margins
-        anchors.top:        parent.top
-        anchors.left:       parent.left
-        anchors.right:      parent.right
-        height:             width
-        radius:             height / 2
-        color:              "transparent"
-        border.color:       "black"
-        border.width:       2
-
-        property real _centerX: width / 2
-        property real _centerY: height / 2
-
-        Canvas {
-            id:             channel0PulseSlice
-            anchors.fill:   parent
-
-            onPaint: {
-                var ctx = getContext("2d");
-                ctx.reset();
-                drawSlice(0, ctx, parent._centerX, parent._centerY, parent.radius * channel0PulsePercent * zoomFactor)
-            }
-        }
-
-        Canvas {
-            id:             channel1PulseSlice
-            anchors.fill:   parent
-
-            onPaint: {
-                var ctx = getContext("2d");
-                ctx.reset();
-                drawSlice(1, ctx, parent._centerX, parent._centerY, parent.radius * channel1PulsePercent * zoomFactor)
-            }
-        }
-
-        Canvas {
-            id:             channel2PulseSlice
-            anchors.fill:   parent
-
-            onPaint: {
-                var ctx = getContext("2d");
-                ctx.reset();
-                drawSlice(2, ctx, parent._centerX, parent._centerY, parent.radius * channel2PulsePercent * zoomFactor)
-            }
-        }
-
-        Canvas {
-            id:             channel3PulseSlice
-            anchors.fill:   parent
-
-            onPaint: {
-                var ctx = getContext("2d");
-                ctx.reset();
-                drawSlice(3, ctx, parent._centerX, parent._centerY, parent.radius * channel3PulsePercent * zoomFactor)
-            }
-        }
-
-        // Fitered heading indicator
-        Image {
-            id:                     fiteredHeadingIndicator
-            source:                 "/qmlimages/attitudePointer.svg"
-            mipmap:                 true
-            fillMode:               Image.PreserveAspectFit
-            anchors.leftMargin:     _pointerMargin
-            anchors.rightMargin:    _pointerMargin
-            anchors.topMargin:      _pointerMargin
-            anchors.bottomMargin:   _pointerMargin
-            anchors.fill:           parent
-            sourceSize.height:      parent.height
-            visible:                headingAvailable
-
-            transform: Rotation {
-                origin.x:       fiteredHeadingIndicator.width  / 2
-                origin.y:       fiteredHeadingIndicator.height / 2
-                angle:          heading
-            }
-
-            readonly property real _pointerMargin: -10
-        }
-
-        // Raw heading indicator
-        Image {
-            id:                     rawHeadingIndicator
-            source:                 "/qmlimages/attitudePointer.svg"
-            mipmap:                 true
-            fillMode:               Image.PreserveAspectFit
-            anchors.leftMargin:     _pointerMargin
-            anchors.rightMargin:    _pointerMargin
-            anchors.topMargin:      _pointerMargin
-            anchors.bottomMargin:   _pointerMargin
-            anchors.fill:           parent
-            sourceSize.height:      parent.height
-            visible:                headingAvailable
-            opacity:                0.5
-
-            transform: Rotation {
-                origin.x:       rawHeadingIndicator.width  / 2
-                origin.y:       rawHeadingIndicator.height / 2
-                angle:          newHeading
-            }
-
-            readonly property real _pointerMargin: -10
-        }
-    }
-
     Column {
         anchors.margins:    _margins
-        anchors.topMargin:  ScreenTools.defaultFontPixelHeight
-        anchors.top:        headingIndicator.bottom
+        anchors.top:        parent.top
         anchors.left:       parent.left
         anchors.right:      parent.right
         spacing:            ScreenTools.defaultFontPixelHeight
 
         QGCLabel {
-            anchors.left:   parent.left
-            anchors.right:  parent.right
+            anchors.horizontalCenter:   parent.horizontalCenter
+            text:                       "Zoom " + zoomFactor
+            font.pointSize:             ScreenTools.largeFontPointSize
+        }
+
+        Rectangle {
+            id:                 headingIndicator
+            anchors.left:       parent.left
+            anchors.right:      parent.right
+            height:             width
+            radius:             height / 2
+            color:              "transparent"
+            border.color:       "black"
+            border.width:       2
+
+            property real _centerX: width / 2
+            property real _centerY: height / 2
+
+            Canvas {
+                id:             channel0PulseSlice
+                anchors.fill:   parent
+
+                onPaint: {
+                    var ctx = getContext("2d");
+                    ctx.reset();
+                    drawSlice(0, ctx, parent._centerX, parent._centerY, parent.radius * channel0PulsePercent * zoomFactor)
+                }
+            }
+
+            Canvas {
+                id:             channel1PulseSlice
+                anchors.fill:   parent
+
+                onPaint: {
+                    var ctx = getContext("2d");
+                    ctx.reset();
+                    drawSlice(1, ctx, parent._centerX, parent._centerY, parent.radius * channel1PulsePercent * zoomFactor)
+                }
+            }
+
+            Canvas {
+                id:             channel2PulseSlice
+                anchors.fill:   parent
+
+                onPaint: {
+                    var ctx = getContext("2d");
+                    ctx.reset();
+                    drawSlice(2, ctx, parent._centerX, parent._centerY, parent.radius * channel2PulsePercent * zoomFactor)
+                }
+            }
+
+            Canvas {
+                id:             channel3PulseSlice
+                anchors.fill:   parent
+
+                onPaint: {
+                    var ctx = getContext("2d");
+                    ctx.reset();
+                    drawSlice(3, ctx, parent._centerX, parent._centerY, parent.radius * channel3PulsePercent * zoomFactor)
+                }
+            }
+
+            // Fitered heading indicator
+            Image {
+                id:                     fiteredHeadingIndicator
+                source:                 "/qmlimages/attitudePointer.svg"
+                mipmap:                 true
+                fillMode:               Image.PreserveAspectFit
+                anchors.leftMargin:     _pointerMargin
+                anchors.rightMargin:    _pointerMargin
+                anchors.topMargin:      _pointerMargin
+                anchors.bottomMargin:   _pointerMargin
+                anchors.fill:           parent
+                sourceSize.height:      parent.height
+                visible:                headingAvailable
+
+                transform: Rotation {
+                    origin.x:       fiteredHeadingIndicator.width  / 2
+                    origin.y:       fiteredHeadingIndicator.height / 2
+                    angle:          heading
+                }
+
+                readonly property real _pointerMargin: -10
+            }
+
+            // Raw heading indicator
+            Image {
+                id:                     rawHeadingIndicator
+                source:                 "/qmlimages/attitudePointer.svg"
+                mipmap:                 true
+                fillMode:               Image.PreserveAspectFit
+                anchors.leftMargin:     _pointerMargin
+                anchors.rightMargin:    _pointerMargin
+                anchors.topMargin:      _pointerMargin
+                anchors.bottomMargin:   _pointerMargin
+                anchors.fill:           parent
+                sourceSize.height:      parent.height
+                visible:                headingAvailable
+                opacity:                0.5
+
+                transform: Rotation {
+                    origin.x:       rawHeadingIndicator.width  / 2
+                    origin.y:       rawHeadingIndicator.height / 2
+                    angle:          newHeading
+                }
+
+                readonly property real _pointerMargin: -10
+            }
+        }
+
+        QGCLabel {
             text:           _settings.frequency.value
-            font.pointSize:     ScreenTools.largeFontPointSize
+            font.pointSize: ScreenTools.largeFontPointSize
 
             MouseArea {
                 anchors.fill:   parent
@@ -690,15 +691,6 @@ Rectangle {
         }
 
         QGCLabel {
-            anchors.left:       parent.left
-            anchors.right:      parent.right
-            text:               "Zoom " + zoomFactor
-            font.pointSize:     ScreenTools.largeFontPointSize
-        }
-
-        QGCLabel {
-            anchors.left:       parent.left
-            anchors.right:      parent.right
             text:               (_settings.autoGain.value ? "Auto" : "Manual") + " Gain " + _settings.gain.value
             font.pointSize:     ScreenTools.largeFontPointSize
 

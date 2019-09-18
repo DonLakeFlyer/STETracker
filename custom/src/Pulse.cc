@@ -68,6 +68,8 @@ void Pulse::clearFiles(void)
 
 void Pulse::pulseTrajectory(double pulseHeading)
 {
+    _pulseTrajectories.append(new PulseTrajectory(_planeCoordinate, _planeHeading + pulseHeading, this));
+
     if (!_replay) {
         QFile   file(_dataDir.filePath(QStringLiteral("pulse.csv")));
 
@@ -124,6 +126,7 @@ void Pulse::_readNextPulse(void)
     emit planeCoordinateChanged(_planeCoordinate);
 
     _planeHeading = rgParts[3].toDouble();
+    emit planeHeadingChanged(_planeHeading);
 
     emit pulse(true, rgParts[4].toInt(), rgParts[5].toDouble(), rgParts[6].toDouble(), rgParts[7].toInt());
 
@@ -145,4 +148,12 @@ void Pulse::_setPlaneHeading(double heading)
 {
     _planeHeading = heading;
     emit planeHeadingChanged(heading);
+}
+
+PulseTrajectory::PulseTrajectory(const QGeoCoordinate& coordinate, double heading, QObject* parent)
+    : QObject       (parent)
+    , _coordinate   (coordinate)
+    , _heading      (heading)
+{
+
 }

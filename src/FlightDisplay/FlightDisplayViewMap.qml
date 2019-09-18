@@ -165,6 +165,39 @@ FlightMap {
         }
     }
 
+    MapItemView {
+        model: QGroundControl.corePlugin.pulse.pulseTrajectories
+
+        delegate: MapQuickItem {
+            anchorPoint.x:  indicator.width / 2
+            anchorPoint.y:  indicator.height / 2
+            coordinate:     object.coordinate
+
+            sourceItem: Rectangle {
+                id:     indicator
+                width:  ScreenTools.defaultFontPixelWidth
+                height: width
+                radius: width / 2
+                color:  "green"
+            }
+        }
+    }
+
+
+    MapItemView {
+        model: QGroundControl.corePlugin.pulse.pulseTrajectories
+
+        delegate: MapPolyline {
+            line.width: 2
+            line.color: "green"
+            path:       [ from, to ]
+            opacity:    0.5
+
+            property var from:  object.coordinate
+            property var to:    object.coordinate.atDistanceAndAzimuth(1000, object.heading)
+        }
+    }
+
     MapScale {
         id:                     mapScale
         anchors.left:           parent.left
