@@ -191,7 +191,7 @@ FlightMap {
             line.width: 2
             line.color: "green"
             path:       [ from, to ]
-            opacity:    0.5
+            opacity:    0.25
 
             property var from:  object.coordinate
             property var to:    object.coordinate.atDistanceAndAzimuth(1000, object.heading)

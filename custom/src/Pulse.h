@@ -29,6 +29,8 @@ public:
     Q_INVOKABLE void    setGain         (int gain);
     Q_INVOKABLE double  log10           (double value);
     Q_INVOKABLE void    pulseTrajectory (double pulseHeading);
+    Q_INVOKABLE void    pause           (void);
+    Q_INVOKABLE void    go              (void);
 
     QGeoCoordinate      planeCoordinate     (void) const { return _posMgr->gcsPosition(); }
     double              planeHeading        (void) const { return _posMgr->gcsHeading(); }
@@ -59,6 +61,7 @@ private:
     QDir                _dataDir;
     QGCPositionManager* _posMgr;
     QmlObjectListModel  _pulseTrajectories;
+    double              _rgPulse[4];
 };
 
 class PulseTrajectory : public QObject

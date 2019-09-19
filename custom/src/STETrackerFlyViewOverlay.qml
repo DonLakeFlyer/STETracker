@@ -229,6 +229,8 @@ Rectangle {
 
         delayedHeadingUpdateTimer.restart()
 
+        return
+
         // Update zoom factor
         var maxChannelPulseValue = Math.max(channel0PulseValue, Math.max(channel1PulseValue, Math.max(channel2PulseValue, channel3PulseValue)))
         var normalizedMaxChannelPulseValue = maxChannelPulseValue - _minRawPulse
@@ -251,6 +253,27 @@ Rectangle {
             channel1PulseSlice.requestPaint()
             channel2PulseSlice.requestPaint()
             channel3PulseSlice.requestPaint()
+        }
+    }
+
+    function calcWeakAngleFromRadiation(strongestPct, secondPct) {
+        // Normalize weaker value to 1
+        var normalizedPulse = secondPct * (1 / strongestPct)
+        //console.log("normalized", strongestPct, secondPct, normalizedPulse)
+
+        //readonly property var  dbRadiationPct:                 [ 1.0,  .97,    .94,    .85,    .63,    .40,    .10,    .20,    .30,    .40,    .45,    0.5,    0.51 ]
+        //readonly property var  dbRadiationAngle:               [ 0,    15,     30,     45,     60,     75,     90,     105,    120,    135,    150,    165,    180 ]
+        //readonly property real dbRadiationAngleInc:            15
+
+        // Find the pulse value in the radiation arrays
+        for (var i=1; i<7; i++) {
+            if (normalizedPulse > dbRadiationPct[i]) {
+                var range = dbRadiationPct[i-1] - dbRadiationPct[i]
+                var pctRatio = (normalizedPulse - dbRadiationPct[i]) / range
+                var angle = dbRadiationAngle[i] - (dbRadiationAngleInc * pctRatio)
+                //console.log("found", i, dbRadiationPct[i], range, pctRatio, angle)
+                return angle
+            }
         }
     }
 
@@ -296,19 +319,31 @@ Rectangle {
         // Take into acount left/right side strengths
         var headingAdjust
         if (rightPulse > leftPulse) {
-            if (leftPulse == 0) {
-                headingAdjust = rightPulse / strongestPulsePct
+            if (true/*leftPulse == 0*/) {
+                var weakAngle  = calcWeakAngleFromRadiation(strongestPulsePct, rightPulse)
+                var adjustedAngle = 90 - weakAngle
+                newHeading = rgHeading[strongestChannel] + adjustedAngle
+                //headingAdjust = rightPulse / strongestPulsePct
             } else {
                 headingAdjust = (1 - (leftPulse / rightPulse)) / 0.5
             }
+            /*
+            headingAdjust *= 1.1;
             newHeading += 45.0 * headingAdjust
+            */
         } else {
-            if (rightPulse == 0) {
-                headingAdjust = leftPulse / strongestPulsePct
+            if (true/*rightPulse == 0*/) {
+                var weakAngle  = calcWeakAngleFromRadiation(strongestPulsePct, leftPulse)
+                var adjustedAngle = 90 - weakAngle
+                newHeading = rgHeading[strongestChannel] - adjustedAngle
+                //headingAdjust = leftPulse / strongestPulsePct
             } else {
                 headingAdjust = (1 - (rightPulse / leftPulse)) / 0.5
             }
+            /*
+            headingAdjust *= 1.1;
             newHeading -= 45.0 * headingAdjust
+            */
         }
         //console.log(qsTr("leftPulse(%1) centerPulse(%2) rightPulse(%3) headingAdjust(%4)").arg(leftPulse).arg(strongestPulsePct).arg(rightPulse).arg(headingAdjust))
 
@@ -516,6 +551,7 @@ Rectangle {
             //console.log("tick", heading, newHeading, rotationAdjustedNewHeading, filteredHeading)
             filteredHeading = _normalizeHeading(filteredHeading)
             heading = filteredHeading
+            //heading = newHeading
             _pulse.pulseTrajectory(heading)
         }
     }
@@ -550,6 +586,10 @@ Rectangle {
     }
 
     function drawSlice(channel, ctx, centerX, centerX, radius) {
+        if (radius <= 0) {
+            return
+        }
+
         var startPi = [ Math.PI * 1.25, Math.PI * 1.75, Math.PI * 0.25, Math.PI * 0.75 ]
         var stopPi = [ Math.PI * 1.75, Math.PI * 0.25, Math.PI * 0.75, Math.PI * 1.25 ]
         ctx.beginPath();
@@ -679,6 +719,16 @@ Rectangle {
                 readonly property real _pointerMargin: -10
             }
         }
+
+        /*QGCButton {
+            text: "Pause"
+            onClicked: _pulse.pause()
+        }
+
+        QGCButton {
+            text: "Go"
+            onClicked: _pulse.go()
+        }*/
 
         QGCLabel {
             text:           _settings.frequency.value

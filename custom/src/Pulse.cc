@@ -20,6 +20,8 @@ Pulse::Pulse(bool replay)
     _replayTimer.setSingleShot(true);
     _replayTimer.setTimerType(Qt::PreciseTimer);
 
+    _rgPulse[0] = _rgPulse[1] = _rgPulse[2] = _rgPulse[3] = qQNaN();
+
     _dataDir.setPath(qgcApp()->toolbox()->settingsManager()->appSettings()->telemetrySavePath());
 
     if (_replay) {
@@ -130,7 +132,16 @@ void Pulse::_readNextPulse(void)
     _planeHeading = rgParts[3].toDouble();
     emit planeHeadingChanged(_planeHeading);
 
-    emit pulse(true, rgParts[4].toInt(), rgParts[5].toDouble(), rgParts[6].toDouble(), rgParts[7].toInt());
+    int channelIndex = rgParts[4].toInt();
+    double pulseValue = rgParts[6].toDouble();
+
+    if (qIsNaN(_rgPulse[channelIndex])) {
+        _rgPulse[channelIndex] = pulseValue;
+    } else {
+        _rgPulse[channelIndex] = (_rgPulse[channelIndex] * 0.9) + (pulseValue * 0.1);
+    }
+
+    emit pulse(true, channelIndex, rgParts[5].toDouble(), _rgPulse[channelIndex], rgParts[7].toInt());
 
     if (!_replayStream->atEnd()) {
         _nextRawDataLine = _replayStream->readLine();
@@ -150,6 +161,17 @@ void Pulse::_setPlaneHeading(double heading)
 {
     _planeHeading = heading;
     emit planeHeadingChanged(heading);
+}
+
+
+void Pulse::pause(void)
+{
+    _replayTimer.stop();
+}
+
+void Pulse::go(void)
+{
+    _replayTimer.start(1);
 }
 
 PulseTrajectory::PulseTrajectory(const QGeoCoordinate& coordinate, double heading, QObject* parent)
