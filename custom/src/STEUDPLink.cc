@@ -146,10 +146,6 @@ void STEUDPLink::_readBytes()
             const struct PulseInfo_s* pulseInfo = (const struct PulseInfo_s*)datagram.constData();
 
             channelIndex = pulseInfo->channelIndex;
-            if (pulseInfo->sendIndex == _rgExpectedIndex[pulseInfo->channelIndex] - 1) {
-                qDebug() << "Multi-send";
-                return;
-            }
             if (pulseInfo->sendIndex != _rgExpectedIndex[pulseInfo->channelIndex]) {
                 qWarning() << "Lost packet channel:expected:actual" << pulseInfo->channelIndex << _rgExpectedIndex[pulseInfo->channelIndex] << pulseInfo->sendIndex;
             }
@@ -167,23 +163,18 @@ void STEUDPLink::_readBytes()
             asender = QHostAddress(QString("127.0.0.1"));
         }
 
-        // Something goes wrong with a connection if we connect too fast, so we stagger then out
-        static int lastTime = 0;
-        int currentTime = QDateTime::currentSecsSinceEpoch();
-
-        if (!contains_target(_sessionTargets, asender, senderPort) && currentTime - lastTime > 5) {
-            lastTime = currentTime;
+        if (!contains_target(_sessionTargets, asender, senderPort)) {
             qDebug() << "UDP connected" << channelIndex << asender << senderPort;
-#if 0
+#if 1
             qDebug() << "TCP connecting to" << channelIndex << asender << 50000;
 
             // This is a new connection. Crank up the TCP connection for it.
 
-            STETCPLink* tcpLink = new STETCPLink(asender.toString(), 50000);
+            STETCPLink* tcpLink = new STETCPLink(asender.toString(), 50000, channelIndex);
             //connect(_pulse, &Pulse::setGainSignal, &_udpLink, &STEUDPLink::setGain);
             //connect(_pulse, &Pulse::setFreqSignal, &_udpLink, &STEUDPLink::setFreq);
             connect(tcpLink, &STETCPLink::pulse, _pulse, &Pulse::pulse);
-            _rgTCPLinks.append(new STETCPLink(asender.toString(), 50000));
+            _rgTCPLinks.append(tcpLink);
 #endif
 
             UDPCLient* target = new UDPCLient(asender, senderPort);

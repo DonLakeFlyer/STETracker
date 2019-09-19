@@ -22,10 +22,11 @@
 ///
 ///     @author Don Gagne <don@thegagnes.com>
 
-STETCPLink::STETCPLink(const QString &hostName, quint16 port)
+STETCPLink::STETCPLink(const QString &hostName, quint16 port, int channelIndex)
     : _socket           (nullptr)
     , _hostName         (hostName)
     , _port             (port)
+    , _channelIndex     (channelIndex)
     , _socketIsConnected(false)
     , _restartTimer     (nullptr)
 {
@@ -47,7 +48,7 @@ STETCPLink::~STETCPLink()
 void STETCPLink::run()
 {
     _restartTimer = new QTimer(this);
-    _restartTimer->setInterval   (3000);
+    _restartTimer->setInterval   (10000);
     _restartTimer->setSingleShot (true);
     connect(_restartTimer, &QTimer::timeout, this, &STETCPLink::_restart);
 
@@ -112,7 +113,7 @@ void STETCPLink::readBytes()
             qWarning() << "Bad datagram size actual:expected" << buffer.size() << expectedSize;
         }
 
-        //_restartTimer->start();
+        _restartTimer->start();
     }
 }
 
@@ -124,8 +125,6 @@ void STETCPLink::readBytes()
  **/
 void STETCPLink::_disconnect(void)
 {
-    quit();
-    wait();
     if (_socket) {
         _socketIsConnected = false;
         _socket->disconnectFromHost(); // Disconnect tcp
@@ -154,30 +153,34 @@ bool STETCPLink::_connect(void)
 bool STETCPLink::_hardwareConnect()
 {
     Q_ASSERT(_socket == NULL);
+
+    qDebug() << "TCP attempting connect to" << _hostName << _channelIndex;
+
     _socket = new QTcpSocket();
 
     QSignalSpy errorSpy(_socket, static_cast<void (QTcpSocket::*)(QAbstractSocket::SocketError)>(&QTcpSocket::error));
     _socket->connectToHost(_hostName, _port);
-    QObject::connect(_socket, &QTcpSocket::readyRead, this, &STETCPLink::readBytes);
+
+    connect(_socket, &QTcpSocket::readyRead,    this, &STETCPLink::readBytes);
+    connect(_socket, &QTcpSocket::connected,    this, &STETCPLink::_connected);
+    connect(_socket, &QTcpSocket::disconnected, this, &STETCPLink::_disconnected);
 
     QObject::connect(_socket, static_cast<void (QTcpSocket::*)(QAbstractSocket::SocketError)>(&QTcpSocket::error),          this, &STETCPLink::_socketError);
     QObject::connect(_socket, static_cast<void (QTcpSocket::*)(QAbstractSocket::SocketState)>(&QTcpSocket::stateChanged),   this, &STETCPLink::_stateChanged);
 
     // Give the socket a second to connect to the other side otherwise error out
-    if (!_socket->waitForConnected(1000))
-    {
+    if (_socket->waitForConnected(5000)) {
+        _socketIsConnected = true;
+        _socket->setSocketOption(QAbstractSocket::KeepAliveOption, 1);
+    } else {
         // Whether a failed connection emits an error signal or not is platform specific.
         // So in cases where it is not emitted, we emit one ourselves.
         if (errorSpy.count() == 0) {
-            qWarning() << "TCP link did not connect" << _hostName << _port;
+            qWarning() << "TCP link did not connect" << _hostName << _channelIndex;
         }
         delete _socket;
         _socket = nullptr;
-        return false;
     }
-    _socketIsConnected = true;
-
-    _socket->setSocketOption(QAbstractSocket::KeepAliveOption, 1);
 
     return true;
 }
@@ -185,13 +188,13 @@ bool STETCPLink::_hardwareConnect()
 void STETCPLink::_socketError(QAbstractSocket::SocketError socketError)
 {
     Q_UNUSED(socketError);
-    qWarning() << "TCP socket error host:Error" << _hostName << _port << _socket->errorString();
+    qWarning() << "TCP socket error host:Error" << _hostName << _port  << _channelIndex << _socket->errorString();
     _restart();
 }
 
 void STETCPLink::_stateChanged(QAbstractSocket::SocketState socketState)
 {
-    qDebug() << "TCP socket state change" << socketState;
+    //qDebug() << "TCP socket state change" << socketState;
 }
 
 
@@ -209,7 +212,18 @@ void STETCPLink::waitForReadyRead(int msecs)
 
 void STETCPLink::_restart(void)
 {
-    qDebug() << "Restarting TCP link" << _hostName;
+    qDebug() << "Restarting TCP link" << _hostName << _channelIndex;
     _disconnect();
     _hardwareConnect();
+}
+
+void STETCPLink::_connected(void)
+{
+    qDebug() << "TCP Connected" << _hostName << _channelIndex;
+    _restartTimer->start();
+}
+
+void STETCPLink::_disconnected(void)
+{
+    qDebug() << "TCP Disconnected" << _hostName << _channelIndex;
 }

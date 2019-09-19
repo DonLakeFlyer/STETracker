@@ -174,7 +174,7 @@ Rectangle {
     }
 
     function _handlePulse(tcpLink, channelIndex, cpuTemp, pulseValue, gain) {
-        console.log(tcpLink ? "TCP Link" : "UDP Link", channelIndex)
+        //console.log(tcpLink ? "TCP Link" : "UDP Link", channelIndex)
         var pulsePercent
         if (pulseValue == 0) {
             pulsePercent = 0

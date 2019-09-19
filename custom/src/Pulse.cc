@@ -68,7 +68,9 @@ void Pulse::clearFiles(void)
 
 void Pulse::pulseTrajectory(double pulseHeading)
 {
-    _pulseTrajectories.append(new PulseTrajectory(_planeCoordinate, _planeHeading + pulseHeading, this));
+    if (_planeCoordinate.isValid()) {
+        _pulseTrajectories.append(new PulseTrajectory(_planeCoordinate, _planeHeading + pulseHeading, this));
+    }
 
     if (!_replay) {
         QFile   file(_dataDir.filePath(QStringLiteral("pulse.csv")));

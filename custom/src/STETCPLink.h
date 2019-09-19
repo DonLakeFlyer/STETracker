@@ -38,7 +38,7 @@ class STETCPLink : public QThread
     friend class LinkManager;
 
 public:
-    STETCPLink(const QString &hostName, quint16 port);
+    STETCPLink(const QString &hostName, quint16 port, int channelIndex);
     ~STETCPLink();
 
     QTcpSocket* getSocket(void) { return _socket; }
@@ -58,6 +58,8 @@ protected slots:
     void _socketError   (QAbstractSocket::SocketError socketError);
     void _stateChanged  (QAbstractSocket::SocketState socketState);
     void _restart       (void);
+    void _connected     (void);
+    void _disconnected  (void);
 
     // From LinkInterface
     virtual void readBytes(void);
@@ -76,6 +78,7 @@ private:
     QTcpSocket* _socket;
     QString     _hostName;
     quint16     _port;
+    int         _channelIndex;
     bool        _socketIsConnected;
     QList<int>  _rgExpectedIndex;
     QTimer*     _restartTimer;

@@ -92,6 +92,7 @@ linux {
     DEFINES += QGC_GST_TAISYNC_ENABLED
     QMAKE_IOS_DEPLOYMENT_TARGET = 8.0
     QMAKE_APPLE_TARGETED_DEVICE_FAMILY = 1,2 # Universal
+    QMAKE_CXXFLAGS += -Wno-address-of-packed-member
     QMAKE_LFLAGS += -Wl,-no_pie
 } else {
     error("Unsupported build platform, only Linux, Windows, Android and Mac (Mac OS and iOS) are supported")
