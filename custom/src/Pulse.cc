@@ -129,7 +129,7 @@ void Pulse::_readNextPulse(void)
     QStringList rgParts = _nextRawDataLine.split(",");
     //qDebug() << rgParts;
 
-    _lastReplayMsecs = rgParts[0].toLong();
+    _lastReplayMsecs = rgParts[0].toULongLong();
 
     _planeCoordinate = QGeoCoordinate(rgParts[1].toDouble(), rgParts[2].toDouble());
     emit planeCoordinateChanged(_planeCoordinate);
@@ -150,7 +150,7 @@ void Pulse::_readNextPulse(void)
 
     if (!_replayStream->atEnd()) {
         _nextRawDataLine = _replayStream->readLine();
-        qint64 nextMsecs = _nextRawDataLine.split(",")[0].toLong();
+        qint64 nextMsecs = _nextRawDataLine.split(",")[0].toULongLong();
         //qDebug() << nextMsecs << _lastReplayMsecs << nextMsecs - _lastReplayMsecs;
         _replayTimer.start(nextMsecs - _lastReplayMsecs);
     }
