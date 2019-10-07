@@ -7,6 +7,9 @@
 	<qresource prefix="/res">
         <file alias="PaintedDogsLogo.png">resources/PaintedDogsLogo.png</file>
 	</qresource>
+	<qresource prefix="/rawdata">
+        <file alias="rawData.csv">resources/rawData.csv</file>
+	</qresource>
     <qresource prefix="/json">
         <file alias="STETracker.SettingsGroup.json">src/STETracker.SettingsGroup.json</file>
     </qresource>

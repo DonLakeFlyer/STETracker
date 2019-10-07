@@ -607,7 +607,7 @@ Rectangle {
         anchors.top:        parent.top
         anchors.left:       parent.left
         anchors.right:      parent.right
-        spacing:            ScreenTools.defaultFontPixelHeight
+        spacing:            4
 
         QGCLabel {
             anchors.horizontalCenter:   parent.horizontalCenter
@@ -717,6 +717,20 @@ Rectangle {
                 }
 
                 readonly property real _pointerMargin: -10
+            }
+        }
+
+        Row {
+            spacing: 5
+
+            QGCButton {
+                text:       _pulse.trackTrajectories ? "Stop" : "Start"
+                onClicked:  _pulse.trackTrajectories = !_pulse.trackTrajectories
+            }
+
+            QGCButton {
+                text:       "Clear"
+                onClicked:  _pulse.clearTrajectories()
             }
         }
 

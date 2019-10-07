@@ -16,6 +16,7 @@ Pulse::Pulse(bool replay)
     : _replayStream     (nullptr)
     , _replay           (replay)
     , _posMgr           (qgcApp()->toolbox()->qgcPositionManager())
+    , _trackTrajectories(false)
 {
     _replayTimer.setSingleShot(true);
     _replayTimer.setTimerType(Qt::PreciseTimer);
@@ -70,6 +71,9 @@ void Pulse::clearFiles(void)
 
 void Pulse::pulseTrajectory(double pulseHeading)
 {
+    if (!_trackTrajectories) {
+        return;
+    }
     if (_planeCoordinate.isValid()) {
         _pulseTrajectories.append(new PulseTrajectory(_planeCoordinate, _planeHeading + pulseHeading, this));
     }
@@ -107,7 +111,8 @@ void Pulse::_rawData(bool tcpLink, int channelIndex, float cpuTemp, double pulse
 
 void Pulse::startReplay(void)
 {
-    _replayFile.setFileName(_dataDir.filePath(QStringLiteral("rawData.csv")));
+    //_replayFile.setFileName(_dataDir.filePath(QStringLiteral("rawData.csv")));
+    _replayFile.setFileName(":/rawdata/rawData.csv");
 
     if (_replayFile.open(QIODevice::ReadOnly | QIODevice::Text)) {
         _replayStream = new QTextStream(&_replayFile);
@@ -172,6 +177,11 @@ void Pulse::pause(void)
 void Pulse::go(void)
 {
     _replayTimer.start(1);
+}
+
+void Pulse::clearTrajectories(void)
+{
+    _pulseTrajectories.clearAndDeleteContents();
 }
 
 PulseTrajectory::PulseTrajectory(const QGeoCoordinate& coordinate, double heading, QObject* parent)
