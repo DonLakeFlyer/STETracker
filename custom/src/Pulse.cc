@@ -193,6 +193,12 @@ void Pulse::stepReplay(void)
     _replayTimer.start(1);
 }
 
+void Pulse::outputReplayMsecs(void)
+{
+    qDebug() << "Replay msecs" << _lastReplayMsecs;
+}
+
+
 PulseTrajectory::PulseTrajectory(const QGeoCoordinate& coordinate, double heading, QObject* parent)
     : QObject       (parent)
     , _coordinate   (coordinate)

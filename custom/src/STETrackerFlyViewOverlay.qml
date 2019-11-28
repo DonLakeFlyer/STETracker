@@ -203,6 +203,70 @@ Rectangle {
         }
     }
 
+    // Simple angle based heading update
+    function updateHeading() {
+        headingAvailable = true
+        headingLowQuality = false
+
+        // Find strongest channel
+        var strongestChannel = -1
+        var strongestPulsePct = -1
+        var rgPulse = [ channel0PulsePercent, channel1PulsePercent, channel2PulsePercent, channel3PulsePercent ]
+        for (var index=0; index<rgPulse.length; index++) {
+            if (rgPulse[index] > strongestPulsePct) {
+                strongestChannel = index
+                strongestPulsePct = rgPulse[index]
+            }
+        }
+
+        if (strongestPulsePct == 0) {
+            // No antennas are picking up a signal
+            headingAvailable = false
+            headingLowQuality = true
+            return
+        }
+
+        var rgLeft = [ 3, 0, 1, 2 ]
+        var rgRight = [ 1, 2, 3, 0 ]
+        var rgHeading = [ 0.0, 90.0, 180.0, 270.0 ]
+        var strongLeft
+        var secondaryStrength
+        var leftPulse = rgPulse[rgLeft[strongestChannel]]
+        var rightPulse = rgPulse[rgRight[strongestChannel]]
+
+        // Start the the best simple single antenna estimate
+        newHeading = rgHeading[strongestChannel]
+
+        if (rightPulse == 0 && leftPulse == 0) {
+            // All we have is one antenna
+            headingLowQuality = true
+            return
+        }
+
+        // Take into acount left/right side strengths
+        var headingAdjust
+        if (rightPulse > leftPulse) {
+            if (leftPulse == 0) {
+                headingAdjust = rightPulse / strongestPulsePct
+            } else {
+                headingAdjust = (1 - (leftPulse / rightPulse)) / 0.5
+            }
+            newHeading += 45.0 * headingAdjust
+        } else {
+            if (rightPulse == 0) {
+                headingAdjust = leftPulse / strongestPulsePct
+            } else {
+                headingAdjust = (1 - (rightPulse / leftPulse)) / 0.5
+            }
+            newHeading -= 45.0 * headingAdjust
+        }
+        //console.log(qsTr("leftPulse(%1) centerPulse(%2) rightPulse(%3) headingAdjust(%4)").arg(leftPulse).arg(strongestPulsePct).arg(rightPulse).arg(headingAdjust))
+
+        newHeading = _normalizeHeading(newHeading)
+
+        //console.log("Estimated Heading:", heading)
+    }
+
     function calcWeakAngleFromRadiation(strongestPct, secondPct) {
         // Normalize weaker value to 1
         var normalizedPulse = secondPct * (1 / strongestPct)
@@ -224,7 +288,8 @@ Rectangle {
         }
     }
 
-    function updateHeading() {
+    // Radiation based heading update
+    function updateHeadingRadiation() {
         headingAvailable = true
         headingLowQuality = false
 
@@ -677,16 +742,6 @@ Rectangle {
             }
         }
 
-        /*QGCButton {
-            text: "Pause"
-            onClicked: _pulse.pause()
-        }
-
-        QGCButton {
-            text: "Go"
-            onClicked: _pulse.go()
-        }*/
-
         QGCLabel {
             text:           _settings.frequency.value
             font.pointSize: ScreenTools.largeFontPointSize
@@ -721,6 +776,11 @@ Rectangle {
             QGCButton {
                 text:       "Step"
                 onClicked:  _pulse.stepReplay();
+            }
+
+            QGCButton {
+                text:       "Mark"
+                onClicked:  _pulse.outputReplayMsecs();
             }
         }
     }

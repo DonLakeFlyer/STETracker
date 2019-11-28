@@ -37,6 +37,7 @@ public:
     Q_INVOKABLE void    toggleReplay        (void);
     Q_INVOKABLE void    stepReplay          (void);
     Q_INVOKABLE void    clearTrajectories   (void);
+    Q_INVOKABLE void    outputReplayMsecs   (void);
 
     QGeoCoordinate      planeCoordinate     (void) const { return _posMgr->gcsPosition(); }
     double              planeHeading        (void) const { return _posMgr->gcsHeading(); }
