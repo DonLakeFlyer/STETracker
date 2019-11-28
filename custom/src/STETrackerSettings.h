@@ -23,4 +23,6 @@ public:
     DEFINE_SETTINGFACT(frequency)
     DEFINE_SETTINGFACT(gain)
     DEFINE_SETTINGFACT(autoGain)
+    DEFINE_SETTINGFACT(minValidPulse)
+    DEFINE_SETTINGFACT(filterMinPulse)
 };

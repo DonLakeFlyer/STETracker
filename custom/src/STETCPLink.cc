@@ -8,6 +8,8 @@
  ****************************************************************************/
 
 #include "STETCPLink.h"
+#include "QGCApplication.h"
+#include "STETrackerQGCPlugin.h"
 
 #include <QTimer>
 #include <QList>
@@ -31,6 +33,8 @@ STETCPLink::STETCPLink(const QString &hostName, quint16 port, int channelIndex)
     , _restartTimer     (nullptr)
 {
     _rgExpectedIndex << 0 << 0 << 0 << 0;
+
+    _settings = qobject_cast<STETrackerQGCPlugin*>(qgcApp()->toolbox()->corePlugin())->vhfSettings();
 
     moveToThread(this);
     _connect();
@@ -108,7 +112,15 @@ void STETCPLink::readBytes()
             _rgExpectedIndex[pulseInfo->channelIndex] = pulseInfo->sendIndex + 1;
 
             //qDebug() << "Pulse" << pulseInfo->channelIndex << pulseInfo->cpuTemp << pulseInfo->pulseValue << pulseInfo->freq;
-            emit pulse(true, pulseInfo->channelIndex, pulseInfo->cpuTemp, pulseInfo->pulseValue, pulseInfo->gain);
+
+            double pulseValue = pulseInfo->pulseValue;
+#if 0
+            if (_settings->filterMinPulse()->rawValue().toBool() &&
+                    pulseInfo->pulseValue < _settings->minValidPulse()->rawValue().toDouble()) {
+                pulseValue = 0;
+            }
+#endif
+            emit pulse(this, pulseInfo->channelIndex, pulseInfo->cpuTemp, pulseValue, pulseInfo->gain);
         } else {
             qWarning() << "Bad datagram size actual:expected" << buffer.size() << expectedSize;
         }
@@ -226,4 +238,26 @@ void STETCPLink::_connected(void)
 void STETCPLink::_disconnected(void)
 {
     qDebug() << "TCP Disconnected" << _hostName << _channelIndex;
+}
+
+
+void STETCPLink::setGain(int gain)
+{
+    QByteArray bytes;
+    int command[2];
+    command[0] = 1;
+    command[1] = gain;
+    bytes.setRawData((const char *)&command, sizeof(command));
+    _writeBytes(bytes);
+}
+
+void STETCPLink::setFreq(int freq)
+{
+    qDebug() << "STETCPLink::setFreq" << freq;
+    QByteArray bytes;
+    int command[2];
+    command[0] = 2;
+    command[1] = freq;
+    bytes.setRawData((const char *)&command, sizeof(command));
+    _writeBytes(bytes);
 }

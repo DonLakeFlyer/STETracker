@@ -152,7 +152,7 @@ void STEUDPLink::_readBytes()
             _rgExpectedIndex[pulseInfo->channelIndex] = pulseInfo->sendIndex + 1;
 
             //qDebug() << "Pulse" << pulseInfo->channelIndex << pulseInfo->cpuTemp << pulseInfo->pulseValue << pulseInfo->freq;
-            emit pulse(false, pulseInfo->channelIndex, pulseInfo->cpuTemp, pulseInfo->pulseValue, pulseInfo->gain);
+            //emit pulse(nullptr, pulseInfo->channelIndex, pulseInfo->cpuTemp, pulseInfo->pulseValue, pulseInfo->gain);
         } else {
             qWarning() << "Bad datagram size actual:expected" << datagram.size() << expectedSize;
             return;
@@ -171,8 +171,8 @@ void STEUDPLink::_readBytes()
             // This is a new connection. Crank up the TCP connection for it.
 
             STETCPLink* tcpLink = new STETCPLink(asender.toString(), 50000, channelIndex);
-            //connect(_pulse, &Pulse::setGainSignal, &_udpLink, &STEUDPLink::setGain);
-            //connect(_pulse, &Pulse::setFreqSignal, &_udpLink, &STEUDPLink::setFreq);
+            connect(_pulse, &Pulse::setGainSignal, tcpLink, &STETCPLink::setGain);
+            connect(_pulse, &Pulse::setFreqSignal, tcpLink, &STETCPLink::setFreq);
             connect(tcpLink, &STETCPLink::pulse, _pulse, &Pulse::pulse);
             _rgTCPLinks.append(tcpLink);
 #endif

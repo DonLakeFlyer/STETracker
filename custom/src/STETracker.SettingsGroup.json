@@ -3,7 +3,9 @@
     "name":             "frequency",
     "shortDescription": "VHF frequency",
     "type":             "Uint32",
-    "defaultValue":     1460000
+    "defaultValue":     1460000,
+    "min":              1480000,
+    "max":              1520000
 },
 {
     "name":             "gain",
@@ -12,6 +14,18 @@
     "defaultValue":     21,
     "minValue":         1,
     "maxnValue":        21
+},
+{
+    "name":             "minValidPulse",
+    "shortDescription": "Minimum valid pulse",
+    "type":             "double",
+    "defaultValue":     0.03
+},
+{
+    "name":             "filterMinPulse",
+    "shortDescription": "Filter out minimum valid pulse",
+    "type":             "bool",
+    "defaultValue":     true
 },
 {
     "name":             "autoGain",

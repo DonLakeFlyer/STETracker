@@ -46,6 +46,15 @@ FlightMap {
     property var    _pulse:             QGroundControl.corePlugin.pulse
     property var    _planeCoordinate:   _pulse.planeCoordinate
     property double _planeHeading:      _pulse.planeHeading
+    property double _collarHeading:     _pulse.collarHeading
+    property var    _collarPath:        []
+
+    function updateCollarHeadingPath() {
+        _collarPath = [ _planeCoordinate, _planeCoordinate.atDistanceAndAzimuth(10000, _planeHeading + _collarHeading)]
+    }
+
+    on_PlaneCoordinateChanged:  updateCollarHeadingPath()
+    on_CollarHeadingChanged:    updateCollarHeadingPath()
 
     // Track last known map position and zoom from Fly view in settings
 
@@ -165,6 +174,26 @@ FlightMap {
         }
     }
 
+    MapPolyline {
+        line.width: 1
+        line.color: "yellow"
+        path:       _collarPath
+    }
+
+    MapQuickItem {
+        anchorPoint.x:  transmitterIndicator.width  / 2
+        anchorPoint.y:  transmitterIndicator.height / 2
+        coordinate:     QtPositioning.coordinate(0.535316, 37.529429)
+
+        sourceItem: Rectangle {
+            id:                 transmitterIndicator
+            color:              "red"
+            width:              10
+            height:             10
+            radius:             width * 0.5
+        }
+    }
+
     MapItemView {
         model: QGroundControl.corePlugin.pulse.pulseTrajectories
 
@@ -194,7 +223,7 @@ FlightMap {
             opacity:    0.75
 
             property var from:  object.coordinate
-            property var to:    object.coordinate.atDistanceAndAzimuth(1000, object.heading)
+            property var to:    object.coordinate.atDistanceAndAzimuth(10000, object.heading)
         }
     }
 

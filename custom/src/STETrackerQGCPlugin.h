@@ -24,8 +24,10 @@ public:
     STETrackerQGCPlugin(QGCApplication* app, QGCToolbox* toolbox);
     ~STETrackerQGCPlugin();
 
-    Q_PROPERTY(STETrackerSettings*  vhfSettings MEMBER _vhfSettings CONSTANT)
+    Q_PROPERTY(STETrackerSettings*  vhfSettings READ   vhfSettings  CONSTANT)
     Q_PROPERTY(Pulse*               pulse       MEMBER _pulse       CONSTANT)
+
+    STETrackerSettings* vhfSettings(void) { return _vhfSettings; }
 
     // Overrides from QGCCorePlugin
     QString             brandImageIndoor        (void) const final;

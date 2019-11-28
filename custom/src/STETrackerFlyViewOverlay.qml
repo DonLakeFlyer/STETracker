@@ -82,20 +82,15 @@ Rectangle {
     property real channel2PulsePercent: 0
     property real channel3PulsePercent: 0
 
+    property real channel0PulsePercent100: channel0PulsePercent * 100
+    property real channel1PulsePercent100: channel1PulsePercent * 100
+    property real channel2PulsePercent100: channel2PulsePercent * 100
+    property real channel3PulsePercent100: channel3PulsePercent * 100
+
     property int channel0Gain:   0
     property int channel1Gain:   0
     property int channel2Gain:   0
     property int channel3Gain:   0
-
-    property int  freqDigit1
-    property int  freqDigit2
-    property int  freqDigit3
-    property int  freqDigit4
-    property int  freqDigit5
-    property int  freqDigit6
-    property int  freqDigit7
-    property int  freqInt
-    property int  freqStart
 
     property real fontPixelWidth:       textMeasureDefault.fontPixelWidth
     property real fontPixelHeight:      textMeasureDefault.fontPixelHeight
@@ -111,49 +106,6 @@ Rectangle {
     onChannel1PulsePercentChanged: channel1PulseSlice.requestPaint()
     onChannel2PulsePercentChanged: channel2PulseSlice.requestPaint()
     onChannel3PulsePercentChanged: channel3PulseSlice.requestPaint()
-
-    Component.onCompleted: {
-        freqInt = _settings.frequency.rawValue
-        freqStart = freqInt
-        updateDigitsFromFreqInt()
-    }
-
-    onFreqDigit1Changed: setFrequencyFromDigits()
-    onFreqDigit2Changed: setFrequencyFromDigits()
-    onFreqDigit3Changed: setFrequencyFromDigits()
-    onFreqDigit4Changed: setFrequencyFromDigits()
-    onFreqDigit5Changed: setFrequencyFromDigits()
-    onFreqDigit6Changed: setFrequencyFromDigits()
-    onFreqDigit7Changed: setFrequencyFromDigits()
-
-    function setFrequencyFromDigits() {
-        freqInt = (freqDigit1 * 1000000) + (freqDigit2 * 100000) + (freqDigit3 * 10000) + (freqDigit4 * 1000) + (freqDigit5 * 100) + (freqDigit6 * 10) + freqDigit7
-        _settings.frequency.rawValue = freqInt
-        sendFreqChange()
-    }
-
-    function updateDigitsFromFreqInt() {
-        var rgDigits = [ 0, 0, 0, 0, 0, 0, 0 ]
-        var digitIndex = 6
-        var freqIntWorker = freqInt
-        while (freqIntWorker > 0) {
-            rgDigits[digitIndex] = freqIntWorker % 10
-            freqIntWorker = freqIntWorker / 10;
-            digitIndex--
-        }
-        freqDigit1 = rgDigits[0]
-        freqDigit2 = rgDigits[1]
-        freqDigit3 = rgDigits[2]
-        freqDigit4 = rgDigits[3]
-        freqDigit5 = rgDigits[4]
-        freqDigit6 = rgDigits[5]
-        freqDigit7 = rgDigits[6]
-
-    }
-
-    function sendFreqChange() {
-        _pulse.setFreq(freqInt * 100)
-    }
 
     function _normalizeHeading(heading) {
         if (heading >= 360.0) {
@@ -174,7 +126,6 @@ Rectangle {
     }
 
     function _handlePulse(tcpLink, channelIndex, cpuTemp, pulseValue, gain) {
-        //console.log(tcpLink ? "TCP Link" : "UDP Link", channelIndex)
         var pulsePercent
         if (pulseValue == 0) {
             pulsePercent = 0
@@ -188,9 +139,10 @@ Rectangle {
             channel0CPUTemp = cpuTemp
             channel0Gain = gain
             channel0NoPulseTimer.restart()
-            if (!channel0FirstFreqSent) {
+            if (!channel0FirstFreqSent && tcpLink) {
+                console.log("First set freq", channelIndex)
                 channel0FirstFreqSent = true
-                sendFreqChange()
+                _pulse.setFreq(_settings.frequency.rawValue * 100)
             }
         } else if (channelIndex === 1) {
             channel1Active = true
@@ -199,9 +151,10 @@ Rectangle {
             channel1CPUTemp = cpuTemp
             channel1Gain = gain
             channel1NoPulseTimer.restart()
-            if (!channel1FirstFreqSent) {
+            if (!channel1FirstFreqSent && tcpLink) {
+                console.log("First set freq", channelIndex)
                 channel1FirstFreqSent = true
-                sendFreqChange()
+                _pulse.setFreq(_settings.frequency.rawValue * 100)
             }
         } else if (channelIndex === 2) {
             channel2Active = true
@@ -210,9 +163,10 @@ Rectangle {
             channel2CPUTemp = cpuTemp
             channel2Gain = gain
             channel2NoPulseTimer.restart()
-            if (!channel2FirstFreqSent) {
+            if (!channel2FirstFreqSent && tcpLink) {
+                console.log("First set freq", channelIndex)
                 channel2FirstFreqSent = true
-                sendFreqChange()
+                _pulse.setFreq(_settings.frequency.rawValue * 100)
             }
         } else if (channelIndex === 3) {
             channel3Active = true
@@ -221,32 +175,25 @@ Rectangle {
             channel3CPUTemp = cpuTemp
             channel3Gain = gain
             channel3NoPulseTimer.restart()
-            if (!channel3FirstFreqSent) {
+            if (!channel3FirstFreqSent && tcpLink) {
+                console.log("First set freq", channelIndex)
                 channel3FirstFreqSent = true
-                sendFreqChange()
+                _pulse.setFreq(_settings.frequency.rawValue * 100)
             }
         }
 
         delayedHeadingUpdateTimer.restart()
 
-        return
-
         // Update zoom factor
-        var maxChannelPulseValue = Math.max(channel0PulseValue, Math.max(channel1PulseValue, Math.max(channel2PulseValue, channel3PulseValue)))
-        var normalizedMaxChannelPulseValue = maxChannelPulseValue - _minRawPulse
-        var normalizedMaxRawPulse = _maxRawPulse - _minRawPulse
-
         var newZoomFactor = 1
-        if (maxChannelPulseValue < _minRawPulse) {
-            newZoomFactor = 4
-        } else if (normalizedMaxChannelPulseValue < normalizedMaxRawPulse / 2) {
-            if (normalizedMaxChannelPulseValue < normalizedMaxRawPulse / 4) {
-                newZoomFactor = 4
-            } else {
-                newZoomFactor = 2
+        var maxChannelPulseValue = Math.max(channel0PulseValue, Math.max(channel1PulseValue, Math.max(channel2PulseValue, channel3PulseValue)))
+        for (var i=32; i>1;) {
+            if (maxChannelPulseValue < _maxRawPulse / i) {
+                newZoomFactor = i
+                break
             }
+            i = i / 2
         }
-
         if (newZoomFactor != zoomFactor) {
             zoomFactor = newZoomFactor
             channel0PulseSlice.requestPaint()
@@ -357,22 +304,6 @@ Rectangle {
         onPulse:    _handlePulse(tcpLink, channelIndex, cpuTemp, pulseValue, gain)
     }
 
-    // Drift range testing
-    Timer {
-        running:    false
-        interval:   5000
-        repeat:     true
-
-        onTriggered: {
-            freqInt += 1
-            if (freqInt > freqStart + 20) {
-                freqInt = freqStart
-            }
-            console.log(freqInt, freqStart)
-            updateDigitsFromFreqInt()
-        }
-    }
-
     // Simulator
     Timer {
         id:             pulseSimulator
@@ -445,6 +376,9 @@ Rectangle {
         running:        true
         interval:       channelTimeoutMSecs
         onTriggered: {
+            if (_pulse.replay && _pulse.replayPaused) {
+                return
+            }
             channel0FirstFreqSent = false
             channel0Active = false
             channel0PulsePercent = 0
@@ -458,6 +392,9 @@ Rectangle {
         running:        true
         interval:       channelTimeoutMSecs
         onTriggered: {
+            if (_pulse.replay && _pulse.replayPaused) {
+                return
+            }
             channel0FirstFreqSent = false
             channel1Active = false
             channel1PulsePercent = 0
@@ -471,6 +408,9 @@ Rectangle {
         running:        true
         interval:       channelTimeoutMSecs
         onTriggered: {
+            if (_pulse.replay && _pulse.replayPaused) {
+                return
+            }
             channel0FirstFreqSent = false
             channel2Active = false
             channel2PulsePercent = 0
@@ -484,6 +424,9 @@ Rectangle {
         running:        true
         interval:       channelTimeoutMSecs
         onTriggered: {
+            if (_pulse.replay && _pulse.replayPaused) {
+                return
+            }
             channel0FirstFreqSent = false
             channel3Active = false
             channel3PulsePercent = 0
@@ -526,7 +469,7 @@ Rectangle {
 
     // This timer updates the heading value using a low pass filter
     Timer {
-        running:    true
+        running:    !_pulse.replay || !_pulse.replayPaused
         interval:   500
         repeat:     true
 
@@ -611,7 +554,7 @@ Rectangle {
 
         QGCLabel {
             anchors.horizontalCenter:   parent.horizontalCenter
-            text:                       "Zoom " + zoomFactor
+            text:                       "Zoom " + zoomFactor + "X"
             font.pointSize:             ScreenTools.largeFontPointSize
         }
 
@@ -763,6 +706,23 @@ Rectangle {
                 onClicked:      gainEditor.visible = true
             }
         }
+
+        RowLayout {
+            QGCComboBox {
+                model: [ 1, 2, 5, 10, 20, 100 ]
+                onActivated: _pulse.replaySpeed = index + 1
+            }
+
+            QGCButton {
+                text:       _pulse.replayPaused ? "Start" : "Stop"
+                onClicked:  _pulse.toggleReplay();
+            }
+
+            QGCButton {
+                text:       "Step"
+                onClicked:  _pulse.stepReplay();
+            }
+        }
     }
 
     GridLayout {
@@ -784,7 +744,7 @@ Rectangle {
 
             QGCLabel { id: label0; text: "Channel 0" }
         }
-        QGCLabel { text: channel0Active ? (qsTr("%1 %2% %3c %4g").arg(channel0PulseValue.toFixed(3)).arg(channel0PulsePercent.toFixed(1)).arg(channel0CPUTemp).arg(channel0Gain)) : "DISCONNECTED" }
+        QGCLabel { text: channel0Active ? (qsTr("%1 %2% %3c %4g").arg(channel0PulseValue.toFixed(3)).arg(channel0PulsePercent100.toFixed(1)).arg(channel0CPUTemp).arg(channel0Gain)) : "DISCONNECTED" }
 
         Rectangle {
             id:     channel1Background
@@ -800,7 +760,7 @@ Rectangle {
 
             QGCLabel { id: label1; text: "Channel 1" }
         }
-        QGCLabel { text: channel1Active ? (qsTr("%1 %2% %3c %4g").arg(channel1PulseValue.toFixed(3)).arg(channel1PulsePercent.toFixed(1)).arg(channel1CPUTemp).arg(channel1Gain)) : "DISCONNECTED" }
+        QGCLabel { text: channel1Active ? (qsTr("%1 %2% %3c %4g").arg(channel1PulseValue.toFixed(3)).arg(channel1PulsePercent100.toFixed(1)).arg(channel1CPUTemp).arg(channel1Gain)) : "DISCONNECTED" }
 
         Rectangle {
             id:     channel2Background
@@ -816,7 +776,7 @@ Rectangle {
 
             QGCLabel { id: label2; text: "Channel 2" }
         }
-        QGCLabel { text: channel2Active ? (qsTr("%1 %2% %3c %4g").arg(channel2PulseValue.toFixed(3)).arg(channel2PulsePercent.toFixed(1)).arg(channel2CPUTemp).arg(channel2Gain)) : "DISCONNECTED" }
+        QGCLabel { text: channel2Active ? (qsTr("%1 %2% %3c %4g").arg(channel2PulseValue.toFixed(3)).arg(channel2PulsePercent100.toFixed(1)).arg(channel2CPUTemp).arg(channel2Gain)) : "DISCONNECTED" }
 
         Rectangle {
             id:     channel3Background
@@ -832,7 +792,7 @@ Rectangle {
 
             QGCLabel { id: label3; text: "Channel 3" }
         }
-        QGCLabel { text: channel3Active ? (qsTr("%1 %2% %3c %4g").arg(channel3PulseValue.toFixed(3)).arg(channel3PulsePercent.toFixed(1)).arg(channel3CPUTemp).arg(channel3Gain)) : "DISCONNECTED" }
+        QGCLabel { text: channel3Active ? (qsTr("%1 %2% %3c %4g").arg(channel3PulseValue.toFixed(3)).arg(channel3PulsePercent100.toFixed(1)).arg(channel3CPUTemp).arg(channel3Gain)) : "DISCONNECTED" }
     }
 
     Rectangle {
@@ -854,7 +814,10 @@ Rectangle {
             QGCButton {
                 Layout.fillWidth:   true
                 text:               "Close"
-                onClicked:          freqEditor.visible = false
+                onClicked: {
+                    _pulse.setFreq(_settings.frequency.rawValue * 100)
+                    freqEditor.visible = false
+                }
             }
         }
     }

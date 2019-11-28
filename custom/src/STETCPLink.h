@@ -7,13 +7,9 @@
  *
  ****************************************************************************/
 
-
-/// @file
-///     @brief TCP link type for SITL support
-///
-///     @author Don Gagne <don@thegagnes.com>
-
 #pragma once
+
+#include "STETrackerSettings.h"
 
 #include <QString>
 #include <QList>
@@ -43,8 +39,10 @@ public:
 
     QTcpSocket* getSocket(void) { return _socket; }
 
+    Q_INVOKABLE void sendFreqChange(int freq) { setFreq(freq); }
+
 signals:
-    void pulse(bool tcpLink, int channelIndex, float cpuTemp, float pulseValue, int gain);
+    void pulse(QObject* tcpLink, int channelIndex, float cpuTemp, float pulseValue, int gain);
 
 private slots:
     // From LinkInterface
@@ -52,7 +50,9 @@ private slots:
 
 public slots:
     void waitForBytesWritten(int msecs);
-    void waitForReadyRead(int msecs);
+    void waitForReadyRead   (int msecs);
+    void setGain            (int gain);
+    void setFreq            (int freq);
 
 protected slots:
     void _socketError   (QAbstractSocket::SocketError socketError);
@@ -82,5 +82,6 @@ private:
     bool        _socketIsConnected;
     QList<int>  _rgExpectedIndex;
     QTimer*     _restartTimer;
+    STETrackerSettings* _settings;
 };
 

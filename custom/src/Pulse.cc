@@ -27,7 +27,6 @@ Pulse::Pulse(bool replay)
 
     if (_replay) {
         connect(&_replayTimer,  &QTimer::timeout,                           this, &Pulse::_readNextPulse);
-
         startReplay();
     } else {
         connect(this,           &Pulse::pulse,                              this, &Pulse::_rawData);
@@ -46,7 +45,6 @@ Pulse::~Pulse()
 
 void Pulse::setFreq(int freq)
 {
-    //qDebug() << "Pulse::setFreq" << freq;
     emit setFreqSignal(freq);
 }
 
@@ -71,9 +69,15 @@ void Pulse::clearFiles(void)
 
 void Pulse::pulseTrajectory(double pulseHeading)
 {
+    if (qIsNaN(_collarHeading) || !qFuzzyCompare(_collarHeading, pulseHeading)) {
+        _collarHeading = pulseHeading;
+        emit collarHeadingChanged(_collarHeading);
+    }
+
     if (!_trackTrajectories) {
         return;
     }
+
     if (_planeCoordinate.isValid()) {
         _pulseTrajectories.append(new PulseTrajectory(_planeCoordinate, _planeHeading + pulseHeading, this));
     }
@@ -90,10 +94,8 @@ void Pulse::pulseTrajectory(double pulseHeading)
     }
 }
 
-void Pulse::_rawData(bool tcpLink, int channelIndex, float cpuTemp, double pulseValue, int gain)
+void Pulse::_rawData(bool /*tcpLink*/, int channelIndex, float cpuTemp, double pulseValue, int gain)
 {
-    Q_UNUSED(tcpLink);
-
     QFile   file(_dataDir.filePath(QStringLiteral("rawData.csv")));
 
     if (file.open(QIODevice::WriteOnly | QIODevice::Append | QIODevice::Text)) {
@@ -111,13 +113,15 @@ void Pulse::_rawData(bool tcpLink, int channelIndex, float cpuTemp, double pulse
 
 void Pulse::startReplay(void)
 {
-    //_replayFile.setFileName(_dataDir.filePath(QStringLiteral("rawData.csv")));
-    _replayFile.setFileName(":/rawdata/rawData.csv");
+    _replayFile.setFileName(_dataDir.filePath(QStringLiteral("/Users/Don/Documents/BuffaloSprings.rawData.csv")));
+    //_replayFile.setFileName(":/rawdata/rawData.csv");
 
     if (_replayFile.open(QIODevice::ReadOnly | QIODevice::Text)) {
         _replayStream = new QTextStream(&_replayFile);
         _nextRawDataLine = _replayStream->readLine();   // Skip over header line
         _nextRawDataLine = _replayStream->readLine();
+        _replayPaused = false;
+        emit replayPausedChanged(_replayPaused);
         _readNextPulse();
     } else {
         qDebug() << "Replay file open failed" << _replayFile.fileName() << _replayFile.errorString();
@@ -146,13 +150,15 @@ void Pulse::_readNextPulse(void)
         _rgPulse[channelIndex] = (_rgPulse[channelIndex] * 0.9) + (pulseValue * 0.1);
     }
 
-    emit pulse(true, channelIndex, rgParts[5].toDouble(), _rgPulse[channelIndex], rgParts[7].toInt());
+    emit pulse(nullptr, channelIndex, rgParts[5].toDouble(), _rgPulse[channelIndex], rgParts[7].toInt());
 
     if (!_replayStream->atEnd()) {
         _nextRawDataLine = _replayStream->readLine();
         qint64 nextMsecs = _nextRawDataLine.split(",")[0].toULongLong();
         //qDebug() << nextMsecs << _lastReplayMsecs << nextMsecs - _lastReplayMsecs;
-        _replayTimer.start(nextMsecs - _lastReplayMsecs);
+        if (!_replayPaused) {
+            _replayTimer.start((nextMsecs - _lastReplayMsecs) / _replaySpeed);
+        }
     }
 }
 
@@ -168,20 +174,23 @@ void Pulse::_setPlaneHeading(double heading)
     emit planeHeadingChanged(heading);
 }
 
-
-void Pulse::pause(void)
-{
-    _replayTimer.stop();
-}
-
-void Pulse::go(void)
-{
-    _replayTimer.start(1);
-}
-
 void Pulse::clearTrajectories(void)
 {
     _pulseTrajectories.clearAndDeleteContents();
+}
+
+void Pulse::toggleReplay(void)
+{
+    _replayPaused = !_replayPaused;
+    emit replayPausedChanged(_replayPaused);
+    if (!_replayPaused) {
+        _replayTimer.start(1);
+    }
+}
+
+void Pulse::stepReplay(void)
+{
+    _replayTimer.start(1);
 }
 
 PulseTrajectory::PulseTrajectory(const QGeoCoordinate& coordinate, double heading, QObject* parent)

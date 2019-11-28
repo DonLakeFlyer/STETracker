@@ -41,7 +41,7 @@ public:
     void    run                     ();
 
 signals:
-    void pulse(bool tcpLink, int channelIndex, float cpuTemp, float pulseValue, int gain);
+    void pulse(QObject* tcpLink, int channelIndex, float cpuTemp, float pulseValue, int gain);
 
 public slots:
     void setGain(int gain);
